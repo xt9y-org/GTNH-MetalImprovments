@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   jar:
@@ -22,6 +22,18 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.4.0'
+      - name: Format GTNH Java sources
+        run: gradle --no-daemon spotlessApply
+      - name: Commit standardized formatting
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if ! git diff --quiet -- src/main/java src/mixin/java; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/main/java src/mixin/java
+            git commit -m "style: apply GTNH Java formatting"
+            git push
+          fi
       - name: Build mod JAR
         run: gradle --no-daemon build
       - name: Upload client JAR
