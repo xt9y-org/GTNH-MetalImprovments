@@ -107,9 +107,12 @@ public final class ClientRuntime {
             if (Loader.isModLoaded("angelica")) {
                 try {
                     Class<?> glsm = Class.forName("com.gtnewhorizons.angelica.glsm.GLStateManager");
-                    backendName = String.valueOf(glsm.getMethod("getRenderBackendName").invoke(null));
+                    backendName = String.valueOf(
+                        glsm.getMethod("getRenderBackendName")
+                            .invoke(null));
                 } catch (ReflectiveOperationException | LinkageError e) {
-                    backendName = "not detectable (" + e.getClass().getSimpleName() + ")";
+                    backendName = "not detectable (" + e.getClass()
+                        .getSimpleName() + ")";
                 }
             } else {
                 backendName = "Angelica absent";
