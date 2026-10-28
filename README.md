@@ -33,7 +33,7 @@ The repository uses the same GTNH convention plugin as other modern GTNH 1.7.10 
 gradle build
 ```
 
-GitHub Actions builds and uploads the JAR automatically. The initial bootstrap does not bundle a binary Gradle wrapper; `gradle` must be installed for local builds. The CI workflow installs the pinned Gradle version.
+GitHub Actions builds and uploads the JAR automatically. The Gradle wrapper is included; use `./gradlew build` locally with Java 25, or download the GitHub Release.
 
 ## Performance and compatibility
 
@@ -89,3 +89,6 @@ This release adds low-overhead rolling frame interval and CPU render tick averag
 **Opt-in SDL GPU experiments:** in `config/xt9ymetal-boot.properties` you can add `sdlFramesInFlight=1`, `2`, or `3` (default `0`, meaning leave Angelica's own default of 2 untouched). Optionally set `disablePresenterThread=true`. These pass through Angelica's **documented startup properties**, without redirecting graphics calls or changing render passes. Fewer frames in flight may reduce latency but reduce throughput; more may improve throughput but increase memory and input lag. Neither option is enabled by default; measure on your own GPU. Remove settings to restore Angelica defaults.
 
 **Tile memory:** Apple tile-based GPUs benefit from fewer render-pass breaks and correct load/store actions. SDL GPU's attachment lifetimes and render-pass structure belong to Angelica; changing them blindly in our mod risks corrupting depth, overlays, HUD and post-processing. Relevant Angelica counters include `renderPassGeneration`, `copyPassesThisFrame`, `inPassClearsThisFrame` and `uploadFlushSubmitsThisFrame`. Optimizing these requires backend profiling and source-level validation upstream. Reference: https://developer.apple.com/documentation/apple-silicon/porting-your-metal-code-to-apple-silicon
+
+
+v0.3.0: reproducible benchmark command, rolling CPU/wall-frame P95/P99, memory diagnostics and opt-in Angelica Metal startup tuning. No changes to Metal render-pass storage or attachment lifetimes.
