@@ -65,3 +65,5 @@ When this JAR is found as a Forge coremod, its minimal early-bootstrap hook requ
 ## Publish a release
 
 GitHub Actions `Release tagged build` publishes a **single installable JAR** for version tags (e.g. `v0.2.0`). Go to **Actions → Publish GTNH Metal Improvements release → Run workflow**, supply a new version tag, and the workflow compiles and creates the GitHub Release. It also accepts pushed `v*` tags. Builds use Java 25/Gradle 9.4, but the mod targets Minecraft 1.7.10 / Java 8-compatible bytecode.
+
+Release process: an explicit main-branch commit titled `release: vX.Y.Z` may also publish a prerelease; other pushes only build artifacts.
