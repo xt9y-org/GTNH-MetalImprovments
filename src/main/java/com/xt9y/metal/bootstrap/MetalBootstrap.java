@@ -19,12 +19,15 @@ public final class MetalBootstrap {
     private static final String AUTO_REQUESTED = "xt9ymetal.bootstrap.requested";
     private static final String AUTO_CHECKED = "xt9ymetal.bootstrap.checked";
     private static final String STATE = "xt9ymetal.bootstrap.status";
+    private static final String CONFIG_LOCATION = "xt9ymetal.bootstrap.configDir";
     private static final String PENDING = "xt9ymetal-metal-starting";
     private static final String DISABLED = "xt9ymetal-metal-disabled";
 
     private MetalBootstrap() {}
 
     private static File configDirectory() {
+        String configured = System.getProperty(CONFIG_LOCATION);
+        if (configured != null) return new File(configured);
         File home = Launch.minecraftHome != null ? Launch.minecraftHome : new File(System.getProperty("user.dir", "."));
         return new File(home, "config");
     }
@@ -57,6 +60,7 @@ public final class MetalBootstrap {
         }
 
         File configDir = configDirectory();
+        System.setProperty(CONFIG_LOCATION, configDir.getAbsolutePath());
         File config = new File(configDir, "xt9ymetal-boot.properties");
         Properties boot = new Properties();
         if (config.isFile()) {
