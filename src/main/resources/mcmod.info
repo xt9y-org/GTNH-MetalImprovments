@@ -1,0 +1,15 @@
+{
+  "modListVersion": 2,
+  "modList": [
+    {
+      "modid": "xt9ymetal",
+      "name": "GTNH Metal Improvements",
+      "description": "Optional client-side frame pacing, particle memory budgeting, and rendering diagnostics for GT New Horizons.",
+      "mcversion": "${minecraftVersion}",
+      "version": "${modVersion}",
+      "url": "https://github.com/xt9y-org/GTNH-MetalImprovments",
+      "authors": ["xt9y-org"],
+      "dependencies": []
+    }
+  ]
+}

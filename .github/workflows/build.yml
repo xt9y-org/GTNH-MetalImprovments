@@ -1,0 +1,32 @@
+name: Build client mod
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  jar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.0'
+      - name: Build mod JAR
+        run: gradle --no-daemon build
+      - name: Upload client JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: GTNH-MetalImprovements
+          path: build/libs/*.jar
+          if-no-files-found: error

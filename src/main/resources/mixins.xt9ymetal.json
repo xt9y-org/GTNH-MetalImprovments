@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8.5-GTNH",
+  "package": "com.xt9y.metal.mixin.mixins",
+  "refmap": "mixins.xt9ymetal.refmap.json",
+  "target": "@env(DEFAULT)",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [],
+  "client": [
+    "MixinEffectRenderer",
+    "MixinMinecraftBackground",
+    "MixinTextureMapAnimations"
+  ],
+  "server": []
+}
