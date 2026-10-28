@@ -27,7 +27,7 @@ This is **client-side**: a server installation is unnecessary. A client connecti
 
 ## Build
 
-The repository uses the same GTNH convention plugin as other modern GTNH 1.7.10 mods, requiring a compatible Gradle 9.x installation and JDK 21+ on the build machine. Run:
+The repository uses the same GTNH convention plugin as other modern GTNH 1.7.10 mods, requiring a compatible Gradle 9.x installation and JDK 25+ on the build machine. Run:
 
 ```bash
 gradle build
