@@ -25,8 +25,7 @@ public final class MetalBootstrap {
     private MetalBootstrap() {}
 
     private static File configDirectory() {
-        File home = Launch.minecraftHome != null
-            ? Launch.minecraftHome : new File(System.getProperty("user.dir", "."));
+        File home = Launch.minecraftHome != null ? Launch.minecraftHome : new File(System.getProperty("user.dir", "."));
         return new File(home, "config");
     }
 
@@ -40,7 +39,9 @@ public final class MetalBootstrap {
     }
 
     public static synchronized void apply() {
-        if (!System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac")) {
+        if (!System.getProperty("os.name", "")
+            .toLowerCase(Locale.ROOT)
+            .contains("mac")) {
             return;
         }
 
@@ -125,11 +126,16 @@ public final class MetalBootstrap {
             boolean nativeMetal = false;
             try {
                 Class<?> manager = Class.forName("com.gtnewhorizons.angelica.glsm.GLStateManager");
-                backend = String.valueOf(manager.getMethod("getRenderBackendName").invoke(null));
-                nativeMetal = backend.toLowerCase(Locale.ROOT).contains("sdl gpu")
-                    && backend.toLowerCase(Locale.ROOT).contains("metal");
+                backend = String.valueOf(
+                    manager.getMethod("getRenderBackendName")
+                        .invoke(null));
+                nativeMetal = backend.toLowerCase(Locale.ROOT)
+                    .contains("sdl gpu")
+                    && backend.toLowerCase(Locale.ROOT)
+                        .contains("metal");
             } catch (ReflectiveOperationException | LinkageError e) {
-                backend = "unavailable (" + e.getClass().getSimpleName() + ")";
+                backend = "unavailable (" + e.getClass()
+                    .getSimpleName() + ")";
             }
 
             File configDir = configDirectory();
@@ -150,8 +156,7 @@ public final class MetalBootstrap {
                 } catch (IOException e) {
                     System.err.println("[GTNH Metal] Cannot save fallback state: " + e);
                 }
-                status("Metal unavailable; active backend: " + backend
-                    + " (auto-retry disabled until marker removed)");
+                status("Metal unavailable; active backend: " + backend + " (auto-retry disabled until marker removed)");
             }
         }
     }
