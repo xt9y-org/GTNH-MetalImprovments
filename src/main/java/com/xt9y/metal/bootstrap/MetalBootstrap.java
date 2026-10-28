@@ -2,7 +2,6 @@ package com.xt9y.metal.bootstrap;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Properties;
@@ -25,7 +24,9 @@ public final class MetalBootstrap {
     private MetalBootstrap() {}
 
     public static synchronized void apply() {
-        if (!System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac")) {
+        if (!System.getProperty("os.name", "")
+            .toLowerCase(Locale.ROOT)
+            .contains("mac")) {
             return;
         }
 
@@ -35,8 +36,7 @@ public final class MetalBootstrap {
             return;
         }
 
-        File instance = Launch.minecraftHome != null
-            ? Launch.minecraftHome
+        File instance = Launch.minecraftHome != null ? Launch.minecraftHome
             : new File(System.getProperty("user.dir", "."));
         File configDir = new File(instance, "config");
         Properties boot = new Properties();
@@ -72,8 +72,9 @@ public final class MetalBootstrap {
         if (disabled.isFile()) {
             System.setProperty(SDL_ENABLE, "false");
             System.out.println(
-                "[GTNH Metal] Previous Metal startup failed; requesting OpenGL. "
-                + "Delete config/" + DISABLED + " to retry.");
+                "[GTNH Metal] Previous Metal startup failed; requesting OpenGL. " + "Delete config/"
+                    + DISABLED
+                    + " to retry.");
             return;
         }
 

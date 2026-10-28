@@ -3,10 +3,10 @@ package com.xt9y.metal;
 import java.util.Arrays;
 import java.util.Locale;
 
-import com.xt9y.metal.bootstrap.MetalBootstrap;
-
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+
+import com.xt9y.metal.bootstrap.MetalBootstrap;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
