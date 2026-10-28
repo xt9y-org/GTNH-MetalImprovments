@@ -23,7 +23,8 @@ public abstract class MixinMinecraftBackground {
             try {
                 Thread.sleep(Math.max(1, 1000 / fps - 1));
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                Thread.currentThread()
+                    .interrupt();
             }
         }
     }

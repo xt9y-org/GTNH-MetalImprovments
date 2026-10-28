@@ -22,8 +22,7 @@ public abstract class MixinEffectRenderer {
     @Shadow
     private List[] fxLayers;
 
-    @Inject(method = "addEffect(Lnet/minecraft/client/particle/EntityFX;)V",
-        at = @At("HEAD"), cancellable = true)
+    @Inject(method = "addEffect(Lnet/minecraft/client/particle/EntityFX;)V", at = @At("HEAD"), cancellable = true)
     private void xt9ymetal$boundParticleWork(EntityFX particle, CallbackInfo ci) {
         if (particle == null || !ClientSettings.particleBudget) {
             return;

@@ -19,9 +19,7 @@ public final class MetalImprovements {
     public static final String MODID = "xt9ymetal";
     public static final Logger LOG = LogManager.getLogger(MODID);
 
-    @SidedProxy(
-        clientSide = "com.xt9y.metal.ClientProxy",
-        serverSide = "com.xt9y.metal.CommonProxy")
+    @SidedProxy(clientSide = "com.xt9y.metal.ClientProxy", serverSide = "com.xt9y.metal.CommonProxy")
     public static CommonProxy proxy;
 
     @Mod.EventHandler

@@ -20,32 +20,55 @@ public final class ClientSettings {
         Configuration config = new Configuration(file);
         try {
             config.load();
-            particleBudget = config.get(
-                "particles",
-                "enabled",
-                true,
-                "Apply an upper bound to particle lists to reduce CPU work and heap use under load."
-            ).getBoolean(true);
+            particleBudget = config
+                .get(
+                    "particles",
+                    "enabled",
+                    true,
+                    "Apply an upper bound to particle lists to reduce CPU work and heap use under load.")
+                .getBoolean(true);
             maxParticlesPerLayer = config.getInt(
-                "maxPerLayer", "particles", 3072, 128, 4000,
+                "maxPerLayer",
+                "particles",
+                3072,
+                128,
+                4000,
                 "Maximum number of particles in each vanilla effect layer (vanilla: 4000).");
             maxParticleDistance = config.getInt(
-                "maxDistanceBlocks", "particles", 0, 0, 512,
+                "maxDistanceBlocks",
+                "particles",
+                0,
+                0,
+                512,
                 "Reject particles farther from the player than this distance; 0 disables distance culling.");
-            adaptiveBudget = config.get(
-                "particles", "adaptiveBudget", false,
-                "Reduce the particle cap during sustained slow rendering. May cause more particles to disappear."
-            ).getBoolean(false);
+            adaptiveBudget = config
+                .get(
+                    "particles",
+                    "adaptiveBudget",
+                    false,
+                    "Reduce the particle cap during sustained slow rendering. May cause more particles to disappear.")
+                .getBoolean(false);
             backgroundFps = config.getInt(
-                "backgroundFps", "display", 20, 0, 120,
+                "backgroundFps",
+                "display",
+                20,
+                0,
+                120,
                 "Approximate FPS cap when the game is unfocused or hidden; 0 disables it.");
             animationTickInterval = config.getInt(
-                "animationTickInterval", "textures", 1, 1, 8,
+                "animationTickInterval",
+                "textures",
+                1,
+                1,
+                8,
                 "Call the animated texture atlas update once per N ticks. Values above 1 slow texture animations.");
-            showF3Statistics = config.get(
-                "diagnostics", "showF3Statistics", false,
-                "Show client frametime and heap estimates on the F3 debug overlay."
-            ).getBoolean(false);
+            showF3Statistics = config
+                .get(
+                    "diagnostics",
+                    "showF3Statistics",
+                    false,
+                    "Show client frametime and heap estimates on the F3 debug overlay.")
+                .getBoolean(false);
         } finally {
             if (config.hasChanged()) {
                 config.save();

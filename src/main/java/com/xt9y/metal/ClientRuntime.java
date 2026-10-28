@@ -89,9 +89,16 @@ public final class ClientRuntime {
         long max = runtime.maxMemory() / (1024L * 1024L);
 
         event.left.add(stats);
-        event.left.add("GTNH Metal: heap " + used + "/" + committed + "/" + max
-            + " MiB used/committed/max; rejected particles " + rejectedParticles);
-        event.left.add("GTNH Metal: Angelica " + (Loader.isModLoaded("angelica") ? "present" : "absent")
-            + "; backend configured separately (OpenGL / SDL GPU)");
+        event.left.add(
+            "GTNH Metal: heap " + used
+                + "/"
+                + committed
+                + "/"
+                + max
+                + " MiB used/committed/max; rejected particles "
+                + rejectedParticles);
+        event.left.add(
+            "GTNH Metal: Angelica " + (Loader.isModLoaded("angelica") ? "present" : "absent")
+                + "; backend configured separately (OpenGL / SDL GPU)");
     }
 }
