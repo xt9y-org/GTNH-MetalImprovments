@@ -74,3 +74,5 @@ Release v0.2.0 includes the experimental macOS Metal autoselector and active-bac
 ### v0.2.1 startup diagnostics
 
 The RFB plugin uses `loadBefore=angelica` to request the backend before Angelica reads its settings, on client-side macOS only. When `showF3Statistics=true`, F3 now shows the bootstrap request/result as well as the actual renderer. On a graceful fallback to OpenGL, automatic retry is disabled using `config/xt9ymetal-metal-disabled` (delete to retry). **This does not prove the device supports Metal; check the on-screen backend and console logs.**
+
+Version v0.2.1: early RFB initialization before Angelica, verified backend activation, and startup recovery-marker improvements.
