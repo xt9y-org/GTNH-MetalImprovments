@@ -3,6 +3,7 @@ name: Publish GTNH Metal Improvements release
 on:
   push:
     tags: [ 'v*' ]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       version:
@@ -15,6 +16,7 @@ permissions:
 
 jobs:
   publish:
+    if: github.event_name != 'push' || github.ref_type == 'tag' || startsWith(github.event.head_commit.message, 'release: v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,9 +26,12 @@ jobs:
         id: tag
         shell: bash
         env:
-          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_type == 'tag' && github.ref_name || github.event.head_commit.message }}
         run: |
           set -euo pipefail
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            RELEASE_TAG="${RELEASE_TAG#release: }"
+          fi
           if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "Expected a version tag like v0.2.0" >&2
             exit 1
