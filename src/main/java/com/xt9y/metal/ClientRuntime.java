@@ -119,5 +119,6 @@ public final class ClientRuntime {
             }
         }
         event.left.add("GTNH Metal: active renderer " + backendName);
+        event.left.add("GTNH Metal: bootstrap " + MetalBootstrap.status());
     }
 }

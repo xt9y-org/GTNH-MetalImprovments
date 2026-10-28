@@ -54,12 +54,12 @@ Version: initial development bootstrap. The project needs a successful CI build 
 
 ## Automatic Angelica Metal selection on macOS (experimental)
 
-When this JAR is found as a Forge coremod, its minimal early-bootstrap hook requests Angelica's **SDL GPU** backend with **metal** as the driver via the existing Angelica startup system properties. This is macOS-only; no Metal API is injected into OpenGL and no rendering backend is duplicated. Angelica must already include its SDL GPU backend, and the instance must have sufficiently recent LWJGL3ify plus the SDL native libraries (Angelica checks requirements).
+On RFB-enabled GTNH launchers, a RetroFuturaBootstrap plugin ordered before Angelica requests Angelica's **SDL GPU** backend with **metal** as the driver via the existing Angelica startup system properties. This is macOS-only; no Metal API is injected into OpenGL and no rendering backend is duplicated. Angelica must already include its SDL GPU backend, and the instance must have sufficiently recent LWJGL3ify plus the SDL native libraries (Angelica checks requirements).
 
 - Default on macOS: `autoEnableMetal=true`. To disable, create `config/xt9ymetal-boot.properties` with `autoEnableMetal=false` and restart.
 - Explicit launcher JVM properties `-Dangelica.sdlgpu.enable` and `-Dangelica.sdlgpu.driver` **take priority** over the mod.
-- A marker `config/xt9ymetal-metal-starting` is created before the first attempted Metal startup. The first rendered frame removes it. If launch crashes before that point, the next run requests OpenGL and creates `config/xt9ymetal-metal-disabled`. To retry after fixing dependencies, delete that **disabled** marker.
-- **Limitations:** Angelica may initialize before a conventional Forge coremod in some launcher/bootstrap combinations; if so the backend property request may be too late. Verify the actual active renderer in Angelica's settings. This does not guarantee an FPS gain or Metal activation. Failure *after* the first frame is not detected by the recovery marker.
+- A marker `config/xt9ymetal-metal-starting` is created before the first attempted Metal startup. The first rendered frame checks the actual active backend and removes it. If the renderer fell back to OpenGL, the mod disables further automatic attempts. If launch crashes before that point, the next run requests OpenGL and creates `config/xt9ymetal-metal-disabled`. To retry after fixing dependencies, delete that **disabled** marker.
+- **Limitations:** In legacy launchers without RetroFuturaBootstrap, the older Forge coremod fallback may still run too late for Angelica. Verify the actual active renderer in Angelica's settings. This does not guarantee an FPS gain or Metal activation. Failure *after* the first frame is not detected by the recovery marker.
 - For the most predictable fallback behavior, configure SDL GPU + Metal directly in Angelica's UI and let Angelica's own startup guard manage it. Forcing the system property overrides Angelica's normal startup guard; the marker above is a separate recovery mechanism.
 
 ## Publish a release
@@ -69,3 +69,8 @@ GitHub Actions `Release tagged build` publishes a **single installable JAR** for
 Release process: an explicit main-branch commit titled `release: vX.Y.Z` may also publish a prerelease; other pushes only build artifacts.
 
 Release v0.2.0 includes the experimental macOS Metal autoselector and active-backend diagnostics.
+
+
+### v0.2.1 startup diagnostics
+
+The RFB plugin uses `loadBefore=angelica` to request the backend before Angelica reads its settings, on client-side macOS only. When `showF3Statistics=true`, F3 now shows the bootstrap request/result as well as the actual renderer. On a graceful fallback to OpenGL, automatic retry is disabled using `config/xt9ymetal-metal-disabled` (delete to retry). **This does not prove the device supports Metal; check the on-screen backend and console logs.**

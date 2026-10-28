@@ -9,104 +9,149 @@ import java.util.Properties;
 import net.minecraft.launchwrapper.Launch;
 
 /**
- * Deliberately depends only on Java and LaunchWrapper: runs before Forge mod initialization.
- * Angelica reads its backend flags during the coremod/tweaker phase.
+ * Requests Angelica's existing SDL GPU Metal backend before its coremod reads
+ * the backend properties. Uses JVM properties to coordinate across classloaders.
  */
 public final class MetalBootstrap {
 
     private static final String SDL_ENABLE = "angelica.sdlgpu.enable";
     private static final String SDL_DRIVER = "angelica.sdlgpu.driver";
+    private static final String AUTO_REQUESTED = "xt9ymetal.bootstrap.requested";
+    private static final String AUTO_CHECKED = "xt9ymetal.bootstrap.checked";
+    private static final String STATE = "xt9ymetal.bootstrap.status";
     private static final String PENDING = "xt9ymetal-metal-starting";
     private static final String DISABLED = "xt9ymetal-metal-disabled";
-    private static volatile boolean armed;
-    private static File pendingFile;
 
     private MetalBootstrap() {}
 
+    private static File configDirectory() {
+        File home = Launch.minecraftHome != null
+            ? Launch.minecraftHome : new File(System.getProperty("user.dir", "."));
+        return new File(home, "config");
+    }
+
+    private static void status(String message) {
+        System.setProperty(STATE, message);
+        System.out.println("[GTNH Metal] " + message);
+    }
+
+    public static String status() {
+        return System.getProperty(STATE, "No backend request made");
+    }
+
     public static synchronized void apply() {
-        if (!System.getProperty("os.name", "")
-            .toLowerCase(Locale.ROOT)
-            .contains("mac")) {
+        if (!System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac")) {
             return;
         }
 
-        // A launcher-supplied override always wins. Do not fight another user's configuration.
+        // The RFB and Forge coremod may live in separate classloaders.
+        if (Boolean.getBoolean(AUTO_REQUESTED)) {
+            return;
+        }
+
+        // Always honor launcher JVM properties, including explicit OpenGL selection.
         if (System.getProperty(SDL_ENABLE) != null || System.getProperty(SDL_DRIVER) != null) {
-            System.out.println("[GTNH Metal] Launcher controls Angelica backend; not overriding.");
+            status("Launcher controls Angelica backend");
             return;
         }
 
-        File instance = Launch.minecraftHome != null ? Launch.minecraftHome
-            : new File(System.getProperty("user.dir", "."));
-        File configDir = new File(instance, "config");
-        Properties boot = new Properties();
+        File configDir = configDirectory();
         File config = new File(configDir, "xt9ymetal-boot.properties");
+        Properties boot = new Properties();
         if (config.isFile()) {
             try (FileInputStream in = new FileInputStream(config)) {
                 boot.load(in);
             } catch (IOException e) {
-                System.err.println("[GTNH Metal] Cannot read startup settings: " + e);
+                status("Cannot read startup settings: " + e);
                 return;
             }
         }
         if (!Boolean.parseBoolean(boot.getProperty("autoEnableMetal", "true"))) {
+            status("Automatic Metal selection disabled in config");
             return;
         }
 
+        File pending = new File(configDir, PENDING);
         File disabled = new File(configDir, DISABLED);
-        pendingFile = new File(configDir, PENDING);
-        if (pendingFile.isFile()) {
-            // The previous launch never reached a rendered frame: avoid an automatic crash loop.
+        if (pending.isFile()) {
+            // If the previous launch died before its first frame, stop automatic attempts.
             try {
-                if (!configDir.isDirectory() && !configDir.mkdirs()) {
-                    throw new IOException("Cannot create " + configDir);
+                if (!disabled.exists() && !disabled.createNewFile()) {
+                    throw new IOException("Unable to write disabled marker");
                 }
-                disabled.createNewFile();
-                if (!pendingFile.delete()) {
-                    System.err.println("[GTNH Metal] Could not remove old startup marker.");
+                if (!pending.delete()) {
+                    status("Previous startup marker could not be removed");
                 }
             } catch (IOException e) {
-                System.err.println("[GTNH Metal] Recovery marker could not be written: " + e);
+                status("Cannot write recovery state: " + e);
+                return;
             }
         }
+
         if (disabled.isFile()) {
-            System.setProperty(SDL_ENABLE, "false");
-            System.out.println(
-                "[GTNH Metal] Previous Metal startup failed; requesting OpenGL. " + "Delete config/"
-                    + DISABLED
-                    + " to retry.");
+            // Don't forcibly disable Angelica's own UI config; just stop auto-selection.
+            status("Automatic Metal disabled after failed startup; OpenGL/Angelica settings retained");
             return;
         }
 
-        // Write marker before enabling the GPU driver; a failed boot disables the next attempt.
         try {
             if (!configDir.isDirectory() && !configDir.mkdirs()) {
                 throw new IOException("Cannot create " + configDir);
             }
-            if (!pendingFile.createNewFile()) {
+            if (!pending.createNewFile()) {
                 throw new IOException("Cannot create startup marker");
             }
         } catch (IOException e) {
-            System.err.println("[GTNH Metal] Startup marker unavailable; not forcing Metal: " + e);
+            status("Startup marker unavailable; Metal not forced: " + e);
             return;
         }
+
+        System.setProperty(AUTO_REQUESTED, "true");
         System.setProperty(SDL_ENABLE, "true");
         System.setProperty(SDL_DRIVER, "metal");
-        armed = true;
-        System.out.println("[GTNH Metal] Requested Angelica SDL GPU Metal backend on macOS.");
+        status("Requested SDL GPU Metal before Angelica initialization");
     }
 
     public static void markRenderedFrame() {
-        if (!armed) {
+        if (!Boolean.getBoolean(AUTO_REQUESTED) || Boolean.getBoolean(AUTO_CHECKED)) {
             return;
         }
         synchronized (MetalBootstrap.class) {
-            if (!armed) {
+            if (Boolean.getBoolean(AUTO_CHECKED)) {
                 return;
             }
-            armed = false;
-            if (pendingFile != null && pendingFile.isFile() && !pendingFile.delete()) {
-                System.err.println("[GTNH Metal] Failed to clear startup marker.");
+            System.setProperty(AUTO_CHECKED, "true");
+            String backend = "unknown";
+            boolean nativeMetal = false;
+            try {
+                Class<?> manager = Class.forName("com.gtnewhorizons.angelica.glsm.GLStateManager");
+                backend = String.valueOf(manager.getMethod("getRenderBackendName").invoke(null));
+                nativeMetal = backend.toLowerCase(Locale.ROOT).contains("sdl gpu")
+                    && backend.toLowerCase(Locale.ROOT).contains("metal");
+            } catch (ReflectiveOperationException | LinkageError e) {
+                backend = "unavailable (" + e.getClass().getSimpleName() + ")";
+            }
+
+            File configDir = configDirectory();
+            File pending = new File(configDir, PENDING);
+            if (pending.isFile() && !pending.delete()) {
+                System.err.println("[GTNH Metal] Could not remove startup marker " + pending);
+            }
+
+            if (nativeMetal) {
+                status("Metal active: " + backend);
+            } else {
+                // A graceful OpenGL fallback must NOT be treated as successful Metal startup.
+                File disabled = new File(configDir, DISABLED);
+                try {
+                    if (!disabled.exists() && !disabled.createNewFile()) {
+                        throw new IOException("Could not write disabled marker");
+                    }
+                } catch (IOException e) {
+                    System.err.println("[GTNH Metal] Cannot save fallback state: " + e);
+                }
+                status("Metal unavailable; active backend: " + backend
+                    + " (auto-retry disabled until marker removed)");
             }
         }
     }
