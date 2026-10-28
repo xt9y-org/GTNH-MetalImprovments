@@ -67,4 +67,4 @@ jobs:
             printf '%s\n' "${jars[@]}" >&2
             exit 1
           fi
-          gh release create "$RELEASE_TAG" "${jars[0]}"             --target "$GITHUB_SHA"             --title "GTNH Metal Improvements $RELEASE_TAG"             --notes "Experimental macOS / Apple Silicon client-side optimization build. Requires GTNH 1.7.10. For native Metal rendering, use a compatible Angelica SDL GPU backend with LWJGL3ify 3.0.25+; the mod requests it on macOS when startup prerequisites allow. Test with a backup instance."             --prerelease
+          gh release create "$RELEASE_TAG" "${jars[0]}"             --target "$GITHUB_SHA"             --title "GTNH Metal Improvements $RELEASE_TAG"             --notes "Experimental GTNH 1.7.10 client-side macOS Metal companion. Requests Angelica SDL GPU Metal (LWJGL3ify 3.0.25+), includes low-overhead P95/P99 frame diagnostics, /metalbench CSV capture, memory/GC counters, and opt-in SDL frame-in-flight/presenter experiments. Always compare in the same scene; GPU execution time is not reported. Test on a backup instance."             --prerelease
