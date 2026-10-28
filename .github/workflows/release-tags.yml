@@ -1,0 +1,64 @@
+name: Publish GTNH Metal Improvements release
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to create (e.g. v0.2.0). Existing tags cannot be overwritten.'
+        required: true
+        default: 'v0.2.0'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate release tag
+        id: tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Expected a version tag like v0.2.0" >&2
+            exit 1
+          fi
+          echo "version=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null; then
+              echo "Tag $RELEASE_TAG already exists; refusing to overwrite it." >&2
+              exit 1
+            fi
+            git tag "$RELEASE_TAG"
+          fi
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.0'
+      - name: Build and format
+        run: ./gradlew --no-daemon spotlessApply build
+      - name: Publish GitHub release with the distributable JAR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          mapfile -t jars < <(find build/libs -maxdepth 1 -type f -name '*.jar'               ! -name '*-sources.jar' ! -name '*-dev.jar'               ! -name '*-javadoc.jar' ! -name '*-api.jar' | sort)
+          if [[ "${#jars[@]}" -ne 1 ]]; then
+            printf 'Expected exactly one installable JAR; found %s\n' "${#jars[@]}" >&2
+            printf '%s\n' "${jars[@]}" >&2
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" "${jars[0]}"             --target "$GITHUB_SHA"             --title "GTNH Metal Improvements $RELEASE_TAG"             --notes "Experimental macOS / Apple Silicon client-side optimization build. Requires GTNH 1.7.10. For native Metal rendering, use a compatible Angelica SDL GPU backend with LWJGL3ify 3.0.25+; the mod requests it on macOS when startup prerequisites allow. Test with a backup instance."             --prerelease

@@ -3,6 +3,8 @@ package com.xt9y.metal;
 import java.util.Arrays;
 import java.util.Locale;
 
+import com.xt9y.metal.bootstrap.MetalBootstrap;
+
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 
@@ -35,6 +37,7 @@ public final class ClientRuntime {
 
     @SubscribeEvent
     public void onRenderTick(TickEvent.RenderTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) MetalBootstrap.markRenderedFrame();
         if (!ClientSettings.adaptiveBudget && !ClientSettings.showF3Statistics) {
             return;
         }

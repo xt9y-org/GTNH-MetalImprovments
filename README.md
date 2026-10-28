@@ -50,3 +50,18 @@ GitHub Actions builds and uploads the JAR automatically. The initial bootstrap d
 - https://github.com/xt9y-org/GTNH-SmallAddons
 
 Version: initial development bootstrap. The project needs a successful CI build and GTNH/Mac hardware validation before a release is labeled stable.
+
+
+## Automatic Angelica Metal selection on macOS (experimental)
+
+When this JAR is found as a Forge coremod, its minimal early-bootstrap hook requests Angelica's **SDL GPU** backend with **metal** as the driver via the existing Angelica startup system properties. This is macOS-only; no Metal API is injected into OpenGL and no rendering backend is duplicated. Angelica must already include its SDL GPU backend, and the instance must have sufficiently recent LWJGL3ify plus the SDL native libraries (Angelica checks requirements).
+
+- Default on macOS: `autoEnableMetal=true`. To disable, create `config/xt9ymetal-boot.properties` with `autoEnableMetal=false` and restart.
+- Explicit launcher JVM properties `-Dangelica.sdlgpu.enable` and `-Dangelica.sdlgpu.driver` **take priority** over the mod.
+- A marker `config/xt9ymetal-metal-starting` is created before the first attempted Metal startup. The first rendered frame removes it. If launch crashes before that point, the next run requests OpenGL and creates `config/xt9ymetal-metal-disabled`. To retry after fixing dependencies, delete that **disabled** marker.
+- **Limitations:** Angelica may initialize before a conventional Forge coremod in some launcher/bootstrap combinations; if so the backend property request may be too late. Verify the actual active renderer in Angelica's settings. This does not guarantee an FPS gain or Metal activation. Failure *after* the first frame is not detected by the recovery marker.
+- For the most predictable fallback behavior, configure SDL GPU + Metal directly in Angelica's UI and let Angelica's own startup guard manage it. Forcing the system property overrides Angelica's normal startup guard; the marker above is a separate recovery mechanism.
+
+## Publish a release
+
+GitHub Actions `Release tagged build` publishes a **single installable JAR** for version tags (e.g. `v0.2.0`). Go to **Actions → Publish GTNH Metal Improvements release → Run workflow**, supply a new version tag, and the workflow compiles and creates the GitHub Release. It also accepts pushed `v*` tags. Builds use Java 25/Gradle 9.4, but the mod targets Minecraft 1.7.10 / Java 8-compatible bytecode.
