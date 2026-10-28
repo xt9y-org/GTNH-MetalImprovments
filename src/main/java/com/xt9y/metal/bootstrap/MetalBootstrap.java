@@ -111,6 +111,26 @@ public final class MetalBootstrap {
             return;
         }
 
+        // These are opt-in experiments, not automatic Apple Silicon heuristics.
+        // Both values are consumed by Angelica on startup, before its GPU device exists.
+        String frames = boot.getProperty("sdlFramesInFlight", "0").trim();
+        if (!"0".equals(frames) && System.getProperty("angelica.sdlgpu.framesInFlight") == null) {
+            try {
+                int requested = Integer.parseInt(frames);
+                if (requested >= 1 && requested <= 3) {
+                    System.setProperty("angelica.sdlgpu.framesInFlight", Integer.toString(requested));
+                    System.out.println("[GTNH Metal] Requested SDL frames in flight: " + requested);
+                }
+            } catch (NumberFormatException e) {
+                System.err.println("[GTNH Metal] Invalid sdlFramesInFlight setting: " + frames);
+            }
+        }
+        if (Boolean.parseBoolean(boot.getProperty("disablePresenterThread", "false"))
+            && System.getProperty("angelica.sdlgpu.disablePresenterThread") == null) {
+            System.setProperty("angelica.sdlgpu.disablePresenterThread", "true");
+            System.out.println("[GTNH Metal] SDL presenter thread disabled by user config");
+        }
+
         System.setProperty(AUTO_REQUESTED, "true");
         System.setProperty(SDL_ENABLE, "true");
         System.setProperty(SDL_DRIVER, "metal");

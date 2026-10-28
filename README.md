@@ -78,3 +78,14 @@ The RFB plugin uses `loadBefore=angelica` to request the backend before Angelica
 Version v0.2.1: early RFB initialization before Angelica, verified backend activation, and startup recovery-marker improvements.
 
 Version v0.2.2: reproducible tagged release build with early Metal selection and verified fallback reporting.
+
+
+## Benchmarking and Apple Silicon (v0.3.0)
+
+This release adds low-overhead rolling frame interval and CPU render tick averages/P95/P99, direct-buffer estimates, GC totals, and Angelica frame-pacer wait samples to the optional F3 diagnostics. **CPU tick time and frame interval are not GPU execution time**. A rolling frame interval includes scheduling, pacing and other application work. The in-game debug overlay can itself affect performance; turn it off during benchmarks.
+
+**Repeatable benchmark:** in your GTNH world, set FPS to Unlimited and disable VSync, wait for chunks to settle, and type `/metalbench start 60`. Keep the camera still for 60 seconds. The mod records wall frame intervals and CPU render tick times and writes a CSV to `logs/xt9ymetal-bench-*.csv`. Repeat at the same position on OpenGL and SDL GPU Metal, with matching mods and settings. `/metalbench status` and `/metalbench stop` are also available. Each benchmark writes a separate CSV. During benchmarks avoid opening F3/JourneyMap overlays or moving the camera.
+
+**Opt-in SDL GPU experiments:** in `config/xt9ymetal-boot.properties` you can add `sdlFramesInFlight=1`, `2`, or `3` (default `0`, meaning leave Angelica's own default of 2 untouched). Optionally set `disablePresenterThread=true`. These pass through Angelica's **documented startup properties**, without redirecting graphics calls or changing render passes. Fewer frames in flight may reduce latency but reduce throughput; more may improve throughput but increase memory and input lag. Neither option is enabled by default; measure on your own GPU. Remove settings to restore Angelica defaults.
+
+**Tile memory:** Apple tile-based GPUs benefit from fewer render-pass breaks and correct load/store actions. SDL GPU's attachment lifetimes and render-pass structure belong to Angelica; changing them blindly in our mod risks corrupting depth, overlays, HUD and post-processing. Relevant Angelica counters include `renderPassGeneration`, `copyPassesThisFrame`, `inPassClearsThisFrame` and `uploadFlushSubmitsThisFrame`. Optimizing these requires backend profiling and source-level validation upstream. Reference: https://developer.apple.com/documentation/apple-silicon/porting-your-metal-code-to-apple-silicon
