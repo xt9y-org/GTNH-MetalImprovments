@@ -24,6 +24,8 @@ public final class ClientRuntime {
     private double p95Millis;
     private String stats = "collecting frames";
     private long rejectedParticles;
+    private boolean backendChecked;
+    private String backendName = "unknown";
 
     private ClientRuntime() {}
 
@@ -100,8 +102,19 @@ public final class ClientRuntime {
                 + max
                 + " MiB used/committed/max; rejected particles "
                 + rejectedParticles);
-        event.left.add(
-            "GTNH Metal: Angelica " + (Loader.isModLoaded("angelica") ? "present" : "absent")
-                + "; backend configured separately (OpenGL / SDL GPU)");
+        if (!backendChecked) {
+            backendChecked = true;
+            if (Loader.isModLoaded("angelica")) {
+                try {
+                    Class<?> glsm = Class.forName("com.gtnewhorizons.angelica.glsm.GLStateManager");
+                    backendName = String.valueOf(glsm.getMethod("getRenderBackendName").invoke(null));
+                } catch (ReflectiveOperationException | LinkageError e) {
+                    backendName = "not detectable (" + e.getClass().getSimpleName() + ")";
+                }
+            } else {
+                backendName = "Angelica absent";
+            }
+        }
+        event.left.add("GTNH Metal: active renderer " + backendName);
     }
 }
