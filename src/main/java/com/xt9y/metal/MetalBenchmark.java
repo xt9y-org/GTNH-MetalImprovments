@@ -95,7 +95,7 @@ public final class MetalBenchmark {
                 }
                 try (BufferedWriter out = new BufferedWriter(new FileWriter(output))) {
                     out.write("metric,value\n");
-                    out.write("backend,\\\"" + renderer.replace("\\"", "") + "\\\"\n");
+                    out.write("backend," + renderer.replace(',', ' ') + "\n");
                     out.write(String.format(Locale.ROOT, "duration_seconds,%.3f%n", elapsedSeconds));
                     out.write("frames," + count + "\n");
                     out.write(String.format(Locale.ROOT, "wall_fps_estimate,%.3f%n",
