@@ -4,7 +4,6 @@ import java.lang.management.BufferPoolMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Locale;
 
 import net.minecraft.client.Minecraft;
@@ -55,9 +54,12 @@ public final class ClientRuntime {
         }
         try {
             Class<?> glsm = Class.forName("com.gtnewhorizons.angelica.glsm.GLStateManager");
-            backendName = String.valueOf(glsm.getMethod("getRenderBackendName").invoke(null));
+            backendName = String.valueOf(
+                glsm.getMethod("getRenderBackendName")
+                    .invoke(null));
         } catch (ReflectiveOperationException | LinkageError e) {
-            backendName = "unknown (" + e.getClass().getSimpleName() + ")";
+            backendName = "unknown (" + e.getClass()
+                .getSimpleName() + ")";
         }
         return backendName;
     }
@@ -65,8 +67,8 @@ public final class ClientRuntime {
     @SubscribeEvent
     public void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            if (!ClientSettings.adaptiveBudget && !ClientSettings.showF3Statistics
-                && !MetalBenchmark.INSTANCE.active()) return;
+            if (!ClientSettings.adaptiveBudget && !ClientSettings.showF3Statistics && !MetalBenchmark.INSTANCE.active())
+                return;
             long now = System.nanoTime();
             wallFramesLastSample = lastFrameStart > 0L ? now - lastFrameStart : 0L;
             if (lastFrameStart > 0L) wallFrames.record(wallFramesLastSample);
@@ -98,12 +100,20 @@ public final class ClientRuntime {
         TimingWindow.Snapshot wall = wallFrames.snapshot();
         TimingWindow.Snapshot cpu = cpuTicks.snapshot();
         averageCpuMillis = cpu.avgMillis;
-        wallSummary = String.format(Locale.ROOT,
+        wallSummary = String.format(
+            Locale.ROOT,
             "GTNH Metal: frame interval avg %.2f / p95 %.2f / p99 %.2f ms, >33ms %d/%d",
-            wall.avgMillis, wall.p95Millis, wall.p99Millis, wall.slowFrames, wall.samples);
-        cpuSummary = String.format(Locale.ROOT,
+            wall.avgMillis,
+            wall.p95Millis,
+            wall.p99Millis,
+            wall.slowFrames,
+            wall.samples);
+        cpuSummary = String.format(
+            Locale.ROOT,
             "GTNH Metal: CPU tick avg %.2f / p95 %.2f / p99 %.2f ms (not GPU time)",
-            cpu.avgMillis, cpu.p95Millis, cpu.p99Millis);
+            cpu.avgMillis,
+            cpu.p95Millis,
+            cpu.p99Millis);
 
         if (!ClientSettings.showF3Statistics) return;
         Runtime rt = Runtime.getRuntime();
@@ -118,8 +128,15 @@ public final class ClientRuntime {
             if (gc.getCollectionCount() > 0) gcCount += gc.getCollectionCount();
             if (gc.getCollectionTime() > 0) gcMillis += gc.getCollectionTime();
         }
-        memorySummary = "GTNH Metal: heap " + heap + " MiB, direct " + direct
-            + " MiB, GC " + gcCount + " / " + gcMillis + " ms since start, particles rejected " + rejectedParticles;
+        memorySummary = "GTNH Metal: heap " + heap
+            + " MiB, direct "
+            + direct
+            + " MiB, GC "
+            + gcCount
+            + " / "
+            + gcMillis
+            + " ms since start, particles rejected "
+            + rejectedParticles;
 
         if (!pacerChecked) {
             pacerChecked = true;
@@ -137,9 +154,11 @@ public final class ClientRuntime {
             try {
                 long gpuWait = ((Number) gpuWaitMethod.invoke(null)).longValue();
                 long gate = ((Number) gateMethod.invoke(null)).longValue();
-                pacerSummary = String.format(Locale.ROOT,
+                pacerSummary = String.format(
+                    Locale.ROOT,
                     "GTNH Metal: Angelica pacer GPU wait %.2f ms, present gate %.2f ms (CPU waits)",
-                    gpuWait / 1_000_000.0, gate / 1_000_000.0);
+                    gpuWait / 1_000_000.0,
+                    gate / 1_000_000.0);
             } catch (ReflectiveOperationException e) {
                 pacerSummary = "";
             }

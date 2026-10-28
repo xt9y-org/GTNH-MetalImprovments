@@ -75,12 +75,16 @@ public final class MetalBenchmark {
         final String renderer = backend;
         final double elapsedSeconds = (System.nanoTime() - started) / 1_000_000_000.0;
         final String stamp = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(new Date());
-        final File output = new File(new File(Minecraft.getMinecraft().mcDataDir, "logs"),
+        final File output = new File(
+            new File(Minecraft.getMinecraft().mcDataDir, "logs"),
             "xt9ymetal-bench-" + stamp + ".csv");
 
         Thread writer = new Thread(() -> {
             try {
-                if (!output.getParentFile().isDirectory() && !output.getParentFile().mkdirs()) {
+                if (!output.getParentFile()
+                    .isDirectory()
+                    && !output.getParentFile()
+                        .mkdirs()) {
                     throw new IOException("Cannot create benchmark directory");
                 }
                 final long[] sortedWall = wall.clone();
@@ -98,22 +102,27 @@ public final class MetalBenchmark {
                     out.write("backend," + renderer.replace(',', ' ') + "\n");
                     out.write(String.format(Locale.ROOT, "duration_seconds,%.3f%n", elapsedSeconds));
                     out.write("frames," + count + "\n");
-                    out.write(String.format(Locale.ROOT, "wall_fps_estimate,%.3f%n",
-                        1_000_000_000.0 * count / sumWall));
+                    out.write(
+                        String.format(Locale.ROOT, "wall_fps_estimate,%.3f%n", 1_000_000_000.0 * count / sumWall));
                     out.write(String.format(Locale.ROOT, "wall_average_ms,%.4f%n", sumWall / (count * 1_000_000.0)));
-                    out.write(String.format(Locale.ROOT, "wall_p95_ms,%.4f%n",
-                        percentile(sortedWall, 0.95) / 1_000_000.0));
-                    out.write(String.format(Locale.ROOT, "wall_p99_ms,%.4f%n",
-                        percentile(sortedWall, 0.99) / 1_000_000.0));
+                    out.write(
+                        String.format(Locale.ROOT, "wall_p95_ms,%.4f%n", percentile(sortedWall, 0.95) / 1_000_000.0));
+                    out.write(
+                        String.format(Locale.ROOT, "wall_p99_ms,%.4f%n", percentile(sortedWall, 0.99) / 1_000_000.0));
                     out.write(String.format(Locale.ROOT, "cpu_average_ms,%.4f%n", sumCpu / (count * 1_000_000.0)));
-                    out.write(String.format(Locale.ROOT, "cpu_p95_ms,%.4f%n",
-                        percentile(sortedCpu, 0.95) / 1_000_000.0));
-                    out.write(String.format(Locale.ROOT, "cpu_p99_ms,%.4f%n",
-                        percentile(sortedCpu, 0.99) / 1_000_000.0));
+                    out.write(
+                        String.format(Locale.ROOT, "cpu_p95_ms,%.4f%n", percentile(sortedCpu, 0.95) / 1_000_000.0));
+                    out.write(
+                        String.format(Locale.ROOT, "cpu_p99_ms,%.4f%n", percentile(sortedCpu, 0.99) / 1_000_000.0));
                     out.write("\nframe,wall_ms,cpu_render_tick_ms\n");
                     for (int i = 0; i < count; i++) {
-                        out.write(String.format(Locale.ROOT, "%d,%.4f,%.4f%n",
-                            i + 1, wall[i] / 1_000_000.0, cpu[i] / 1_000_000.0));
+                        out.write(
+                            String.format(
+                                Locale.ROOT,
+                                "%d,%.4f,%.4f%n",
+                                i + 1,
+                                wall[i] / 1_000_000.0,
+                                cpu[i] / 1_000_000.0));
                     }
                 }
                 MetalImprovements.LOG.info("Benchmark CSV saved: {}", output.getAbsolutePath());

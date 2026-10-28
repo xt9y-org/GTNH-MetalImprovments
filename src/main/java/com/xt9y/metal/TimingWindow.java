@@ -7,6 +7,7 @@ public final class TimingWindow {
     private static final long BUCKET_NANOS = 100_000L;
 
     public static final class Snapshot {
+
         public final int samples;
         public final double avgMillis;
         public final double p95Millis;
@@ -14,8 +15,8 @@ public final class TimingWindow {
         public final double maxMillis;
         public final int slowFrames;
 
-        private Snapshot(int samples, double avgMillis, double p95Millis, double p99Millis,
-            double maxMillis, int slowFrames) {
+        private Snapshot(int samples, double avgMillis, double p95Millis, double p99Millis, double maxMillis,
+            int slowFrames) {
             this.samples = samples;
             this.avgMillis = avgMillis;
             this.p95Millis = p95Millis;
@@ -74,7 +75,12 @@ public final class TimingWindow {
         for (int i = 0; i < count; i++) {
             maximum = Math.max(maximum, samples[i]);
         }
-        return new Snapshot(count, sum / (count * 1_000_000.0), percentile(0.95),
-            percentile(0.99), maximum / 1_000_000.0, over33ms);
+        return new Snapshot(
+            count,
+            sum / (count * 1_000_000.0),
+            percentile(0.95),
+            percentile(0.99),
+            maximum / 1_000_000.0,
+            over33ms);
     }
 }

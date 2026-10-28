@@ -113,7 +113,8 @@ public final class MetalBootstrap {
 
         // These are opt-in experiments, not automatic Apple Silicon heuristics.
         // Both values are consumed by Angelica on startup, before its GPU device exists.
-        String frames = boot.getProperty("sdlFramesInFlight", "0").trim();
+        String frames = boot.getProperty("sdlFramesInFlight", "0")
+            .trim();
         if (!"0".equals(frames) && System.getProperty("angelica.sdlgpu.framesInFlight") == null) {
             try {
                 int requested = Integer.parseInt(frames);
