@@ -132,3 +132,6 @@ Release v0.4.3: nonallocating render-pass probe and JVM GC notifications in one-
 Fixes a confirmed v0.4.3 startup crash: `AngelicaFrameProbe.INSTANCE` used to initialize before the `METRICS` array and its reused counter buffer accessed a null array. Metrics now initialize first. More importantly, splash-screen frames do not initialize the profiler at all: a tiny bootstrap-safe gate enables profiling **only while `/metalbench` is capturing frames**. Profiler exceptions disable that optional instrumentation instead of terminating the game. Compilation and packaging are validated in CI; the fix still needs a GTNH 2.9.0-RC-2 macOS runtime test.
 
 If a crash left `config/xt9ymetal-metal-starting` or `config/xt9ymetal-metal-disabled`, delete both after replacing the broken JAR to re-enable automatic Metal backend selection. The files contain only backend startup recovery state, not world data.
+
+
+v0.4.4 hotfix release: fix splash-screen crash from class static initialization order and skip profiler initialization outside an active /metalbench capture. Verified the corrected class initializes successfully from the compiled JAR.
