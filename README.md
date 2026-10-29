@@ -101,3 +101,6 @@ Open a world and enter **`/metalbench`**. No restart, JVM arguments, FPS cap cha
 The command **does not switch the renderer**. Angelica selects OpenGL or Metal during initialization, and changing it safely requires restarting Minecraft. One capture profiles whichever backend is currently running. The report notes VSync/framerate-cap conditions and camera movement. The capture is observational: no graphics state or attachment load/store operations are changed. Render-pass instrumentation only runs when recording on Angelica's SDL GPU backend, and is gracefully skipped when not available. CPU wait samples are **not** GPU execution times.
 
 For tile-based Apple GPUs, the diagnostic pass-end breakdown can identify excess render-target switching, unnecessary clears, copy transitions, upload-flushes, and readbacks. Only after observing those counters can a targeted change in Angelica safely eliminate redundant pass boundaries and memory traffic. No speculative memoryless attachment changes are enabled.
+
+
+v0.4.0 release: one-command /metalbench (five-second warmup, 60-second capture, CSV with CPU and frame timings, memory, GC and Angelica SDL GPU pass/clear/copy/submit counters).
