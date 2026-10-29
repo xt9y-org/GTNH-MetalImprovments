@@ -16,6 +16,8 @@ import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 
+import org.lwjgl.opengl.Display;
+
 /** One command, one launch, one read-only capture of the currently active backend. */
 public final class MetalBenchmark {
 
@@ -42,6 +44,9 @@ public final class MetalBenchmark {
     private Method restoreVSync;
     private Object previousVSync;
     private boolean temporaryVSyncChanged;
+    private long focusPausedAt;
+    private long totalFocusPausedNanos;
+    private int focusPauseEvents;
 
     private long startedNanos;
     private long measuringSince;
@@ -93,6 +98,7 @@ public final class MetalBenchmark {
 
     public String status() {
         if (state == 0) return "No benchmark running";
+        if (focusPausedAt != 0L) return "Paused: Minecraft unfocused; resumes automatically";
         if (state == 1) {
             long remaining = Math.max(0, (WARMUP_NANOS - (System.nanoTime() - startedNanos)) / 1_000_000_000L);
             return "Warming up (" + remaining + "s remaining)";
@@ -117,6 +123,9 @@ public final class MetalBenchmark {
         restoreVSync = null;
         previousVSync = null;
         temporaryVSyncChanged = false;
+        focusPausedAt = 0L;
+        totalFocusPausedNanos = 0L;
+        focusPauseEvents = 0;
         totalPasses = 0L;
         samplePassFrames = 0L;
         passGpuWait = 0L;
@@ -146,7 +155,7 @@ public final class MetalBenchmark {
         if (mc.gameSettings.limitFramerate > 0 && mc.gameSettings.limitFramerate < 260)
             warning += "Configured FPS cap bypassed temporarily; ";
         disableVSyncTemporarily();
-        return "Uncapped benchmark started: 5s warmup + " + captureSeconds
+        return "Uncapped foreground benchmark started: 5s warmup + " + captureSeconds
             + "s capture. Original VSync settings will be restored. Backend: "
             + renderer;
     }
@@ -195,7 +204,7 @@ public final class MetalBenchmark {
     }
 
     public void recordPassStats(long generation, int[] metrics, int[] causes, long gpuWait, long acquireWait) {
-        if (state != 2) return;
+        if (state != 2 || focusPausedAt != 0L) return;
         if (lastPassGeneration >= 0 && generation >= lastPassGeneration) totalPasses += generation - lastPassGeneration;
         lastPassGeneration = generation;
         for (int i = 0; i < Math.min(metrics.length, passTotals.length); i++) passTotals[i] += metrics[i];
@@ -212,6 +221,28 @@ public final class MetalBenchmark {
         if (mc.theWorld == null || mc.thePlayer == null) {
             warning += "World unloaded during benchmark; ";
             finish(true);
+            return;
+        }
+
+        // The normal background limiter stays enabled, but unfocused time never
+        // contaminates the FPS and P99 data; the capture resumes automatically.
+        boolean foreground = Display.isCreated() && Display.isActive() && Display.isVisible();
+        if (!foreground) {
+            if (focusPausedAt == 0L) {
+                focusPausedAt = now;
+                focusPauseEvents++;
+            }
+            return;
+        }
+        if (focusPausedAt != 0L) {
+            long delta = Math.max(0L, now - focusPausedAt);
+            totalFocusPausedNanos += delta;
+            startedNanos += delta;
+            if (measuringSince != 0L) measuringSince += delta;
+            if (lastMemorySample != 0L) lastMemorySample += delta;
+            if (lastPositionCheck != 0L) lastPositionCheck += delta;
+            focusPausedAt = 0L;
+            // The first interval after focus returns includes background time.
             return;
         }
 
@@ -308,6 +339,12 @@ public final class MetalBenchmark {
 
     private String finish(boolean interrupted) {
         if (state == 0) return "No benchmark running";
+        if (focusPausedAt != 0L) {
+            long delta = Math.max(0L, System.nanoTime() - focusPausedAt);
+            totalFocusPausedNanos += delta;
+            if (measuringSince != 0L) measuringSince += delta;
+            focusPausedAt = 0L;
+        }
         state = 0;
         restoreVSyncMode();
         if (samples == 0) return "Capture ended without any frames.";
@@ -320,6 +357,8 @@ public final class MetalBenchmark {
         final long[] gates = Arrays.copyOf(presentGates, count);
         final long[] passCopy = passTotals.clone();
         final long[] reasonCopy = passEndCauses.clone();
+        final int focusEventsCopy = focusPauseEvents;
+        final double focusSecondsCopy = totalFocusPausedNanos / 1_000_000_000.0;
         final int memorySampleCount = memorySamples;
         final long[] secondsCopy = Arrays.copyOf(sampleSecond, memorySampleCount);
         final long[] heapsCopy = Arrays.copyOf(sampleHeap, memorySampleCount);
@@ -356,6 +395,9 @@ public final class MetalBenchmark {
                     out.write("scene," + worldCopy.replace(',', ';') + "\n");
                     out.write("settings," + settingsCopy + "\n");
                     out.write("benchmark_cap_mode,temporarily_uncapped\n");
+                    out.write(String.format(Locale.ROOT, "focus_paused_seconds,%.3f%n", focusSecondsCopy));
+                    out.write("focus_pause_events," + focusEventsCopy + "\n");
+                    out.write("focus_policy,foreground_only_automatic_pause\n");
                     out.write("benchmark_vsync_mode,temporarily_disabled_when_supported\n");
                     out.write("warnings," + warningCopy.replace(',', ';') + "\n");
                     out.write(String.format(Locale.ROOT, "duration_seconds,%.3f%n", elapsed));

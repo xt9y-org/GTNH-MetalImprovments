@@ -110,3 +110,9 @@ v0.4.0 release: one-command /metalbench (five-second warmup, 60-second capture, 
 `/metalbench` temporarily overrides Angelica's FPS cap and disables the effective VSync mode when possible; the original VSync mode is restored after the benchmark, including `/metalbench stop`. It does not write Minecraft video options or change Angelica's backend. The CSV also includes time-series samples of heap, direct buffers, GC count and GC duration (once per second) to help associate stalls with Java memory pressure. If a driver caps the frame rate independently, the report still reflects the observed FPS. The existing Metal backend cannot switch to OpenGL without restarting the game.
 
 Release v0.4.1: uncapped one-command capture with temporary Angelica VSync override/restoration, plus a per-second GC and JVM memory timeline.
+
+## v0.4.2: automatic foreground-only benchmarking
+
+`/metalbench` automatically pauses whenever Minecraft is unfocused, invisible or minimized and resumes when the window returns to the foreground. These periods are excluded from the benchmark timer and FPS/P99 statistics, so the existing background FPS limiter cannot contaminate the result. The CSV records the number and duration of focus pauses. No settings changes or extra commands are needed; Minecraft needs 60 seconds of foreground time to complete its default capture.
+
+The prior v0.4.1 recording had about 24 seconds near 16 FPS followed by 36 seconds near 419 FPS, consistent with background throttling. Three Java GC collections totaled 205 ms around seconds 24–28. Metal had approximately two render passes per frame and no extra copy passes, so no speculative tile-memory attachment change has been enabled.
