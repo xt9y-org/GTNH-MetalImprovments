@@ -250,6 +250,7 @@ public final class MetalBenchmark {
         if (state == 1) {
             if (now - startedNanos < WARMUP_NANOS) return;
             state = 2;
+            AngelicaProbeGate.enabled = true;
             measuringSince = now;
             lastPositionCheck = now;
             sampleMemory(now, true);
@@ -347,6 +348,7 @@ public final class MetalBenchmark {
             if (measuringSince != 0L) measuringSince += delta;
             focusPausedAt = 0L;
         }
+        AngelicaProbeGate.enabled = false;
         state = 0;
         GcEventSampler.Event[] gcNotifications = gcEvents.end();
         restoreVSyncMode();

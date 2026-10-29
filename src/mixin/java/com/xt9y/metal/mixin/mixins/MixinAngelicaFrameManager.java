@@ -7,8 +7,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.xt9y.metal.AngelicaFrameProbe;
+import com.xt9y.metal.AngelicaProbeGate;
+import com.xt9y.metal.MetalImprovements;
 
-/** Pure instrumentation: does not change the render pass or attachment state. */
+/** Never load the profiler during startup or outside a benchmark capture. */
 @Pseudo
 @Mixin(targets = "com.gtnewhorizons.angelica.sdlgpu.frame.FrameManager", remap = false)
 public abstract class MixinAngelicaFrameManager {
@@ -23,6 +25,13 @@ public abstract class MixinAngelicaFrameManager {
         require = 0,
         remap = false)
     private void xt9ymetal$measurePasses(CallbackInfo ci) {
-        AngelicaFrameProbe.INSTANCE.onFrameEnd(this);
+        if (!AngelicaProbeGate.enabled) return;
+        try {
+            AngelicaFrameProbe.INSTANCE.onFrameEnd(this);
+        } catch (RuntimeException | LinkageError e) {
+            // Optional profiling must never take the client down with it.
+            AngelicaProbeGate.enabled = false;
+            MetalImprovements.LOG.error("Disabling incompatible Angelica frame profiler", e);
+        }
     }
 }

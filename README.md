@@ -126,3 +126,9 @@ v0.4.2 release: automatic focus-aware foreground capture to avoid background FPS
 The previous benchmark recorded **465.355 rendered FPS**, frame P95 **3.978 ms** and P99 **5.598 ms**, with **three GC collections totaling 177 ms**. The two largest pauses (117.9/124.5 ms) aligned with GC activity around seconds 20–22. Another 71.0-ms frame gap near second 47 occurred without a new recorded GC. Render-pass counts remained close to two per frame, with no copy passes or mid-frame submits. Thus a speculative tile-memory rewrite would be unjustified.
 
 Release v0.4.3: nonallocating render-pass probe and JVM GC notifications in one-command benchmark reports.
+
+## v0.4.4 startup crash hotfix
+
+Fixes a confirmed v0.4.3 startup crash: `AngelicaFrameProbe.INSTANCE` used to initialize before the `METRICS` array and its reused counter buffer accessed a null array. Metrics now initialize first. More importantly, splash-screen frames do not initialize the profiler at all: a tiny bootstrap-safe gate enables profiling **only while `/metalbench` is capturing frames**. Profiler exceptions disable that optional instrumentation instead of terminating the game. Compilation and packaging are validated in CI; the fix still needs a GTNH 2.9.0-RC-2 macOS runtime test.
+
+If a crash left `config/xt9ymetal-metal-starting` or `config/xt9ymetal-metal-disabled`, delete both after replacing the broken JAR to re-enable automatic Metal backend selection. The files contain only backend startup recovery state, not world data.

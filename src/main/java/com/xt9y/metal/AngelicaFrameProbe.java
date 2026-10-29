@@ -9,13 +9,14 @@ import java.lang.reflect.Method;
  */
 public final class AngelicaFrameProbe {
 
-    public static final AngelicaFrameProbe INSTANCE = new AngelicaFrameProbe();
-
     private static final String[] METRICS = { "submitsThisFrame", "midFrameSubmitsThisFrame", "copyPassesThisFrame",
         "fboPassesThisFrame", "swapchainPassesThisFrame", "clearPassesThisFrame", "inPassClearsThisFrame",
         "materializedClearPassesThisFrame", "uploadFlushSubmitsThisFrame", "arenaOverflowFlushesThisFrame",
         "mipGenSubmitsThisFrame", "presentSkipsThisFrame", "batchBreakPipelineThisFrame", "batchBreakSamplerThisFrame",
         "perFrameBlockPassBreaksThisFrame" };
+
+    public static final AngelicaFrameProbe INSTANCE = new AngelicaFrameProbe();
+
 
     private Method frameMethod;
     private Field[] fields;
