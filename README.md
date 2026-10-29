@@ -116,3 +116,5 @@ Release v0.4.1: uncapped one-command capture with temporary Angelica VSync overr
 `/metalbench` automatically pauses whenever Minecraft is unfocused, invisible or minimized and resumes when the window returns to the foreground. These periods are excluded from the benchmark timer and FPS/P99 statistics, so the existing background FPS limiter cannot contaminate the result. The CSV records the number and duration of focus pauses. No settings changes or extra commands are needed; Minecraft needs 60 seconds of foreground time to complete its default capture.
 
 The prior v0.4.1 recording had about 24 seconds near 16 FPS followed by 36 seconds near 419 FPS, consistent with background throttling. Three Java GC collections totaled 205 ms around seconds 24–28. Metal had approximately two render passes per frame and no extra copy passes, so no speculative tile-memory attachment change has been enabled.
+
+v0.4.2 release: automatic focus-aware foreground capture to avoid background FPS throttling contaminating benchmark results.
