@@ -17,7 +17,6 @@ public final class AngelicaFrameProbe {
 
     public static final AngelicaFrameProbe INSTANCE = new AngelicaFrameProbe();
 
-
     private Method frameMethod;
     private Field[] fields;
     private Field passEnds;
