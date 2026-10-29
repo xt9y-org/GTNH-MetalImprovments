@@ -30,7 +30,9 @@ public final class MetalBenchmark {
     private final long[] cpuTicks = new long[MAX_FRAMES];
     private final long[] gpuWaits = new long[MAX_FRAMES];
     private final long[] presentGates = new long[MAX_FRAMES];
-    private final long[] passTotals = new long[AngelicaFrameProbe.metricNames().length];
+    // Keep benchmark class initialization independent of the splash-screen profiler.
+    // The 15 counter names are resolved only when writing the finished report.
+    private final long[] passTotals = new long[15];
     private final long[] passEndCauses = new long[8];
     private final GcEventSampler gcEvents = new GcEventSampler();
 
