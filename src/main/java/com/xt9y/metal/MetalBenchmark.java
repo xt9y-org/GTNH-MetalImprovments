@@ -32,6 +32,7 @@ public final class MetalBenchmark {
     private final long[] presentGates = new long[MAX_FRAMES];
     private final long[] passTotals = new long[AngelicaFrameProbe.metricNames().length];
     private final long[] passEndCauses = new long[8];
+    private final GcEventSampler gcEvents = new GcEventSampler();
 
     private static final int MAX_MEMORY_SAMPLES = 130;
     private final long[] sampleSecond = new long[MAX_MEMORY_SAMPLES];
@@ -252,6 +253,7 @@ public final class MetalBenchmark {
             measuringSince = now;
             lastPositionCheck = now;
             sampleMemory(now, true);
+            gcEvents.begin();
             sendChat("Warmup finished. Recording " + seconds + "s.");
             return;
         }
@@ -346,6 +348,7 @@ public final class MetalBenchmark {
             focusPausedAt = 0L;
         }
         state = 0;
+        GcEventSampler.Event[] gcNotifications = gcEvents.end();
         restoreVSyncMode();
         if (samples == 0) return "Capture ended without any frames.";
 
@@ -357,6 +360,9 @@ public final class MetalBenchmark {
         final long[] gates = Arrays.copyOf(presentGates, count);
         final long[] passCopy = passTotals.clone();
         final long[] reasonCopy = passEndCauses.clone();
+        final GcEventSampler.Event[] gcNotificationsCopy = gcNotifications;
+        final long startNanosCopy = measuringSince;
+        final long focusPausedNanosCopy = totalFocusPausedNanos;
         final int focusEventsCopy = focusPauseEvents;
         final double focusSecondsCopy = totalFocusPausedNanos / 1_000_000_000.0;
         final int memorySampleCount = memorySamples;
@@ -418,6 +424,7 @@ public final class MetalBenchmark {
                     out.write(
                         String.format(Locale.ROOT, "cpu_p99_ms,%.4f%n", percentile(sortedCpu, 0.99) / 1_000_000.0));
                     out.write("gc_collections," + gcCount + "\n");
+                    out.write("gc_notifications," + gcNotificationsCopy.length + "\n");
                     out.write("gc_collection_millis," + gcTime + "\n");
                     out.write("heap_start_mib," + (heapStart / 1048576L) + "\n");
                     out.write("heap_end_mib," + (heapEnd / 1048576L) + "\n");
@@ -460,6 +467,14 @@ public final class MetalBenchmark {
                                 directsCopy[i] / 1048576L,
                                 gcCountCopy[i],
                                 gcTimeCopy[i]));
+                    }
+                    out.write("\nGC_notification_received_second,gc_duration_ms,gc_name,gc_cause\n");
+                    for (GcEventSampler.Event event : gcNotificationsCopy) {
+                        double received = Math.max(0.0,
+                            (event.receivedNanos - startNanosCopy - focusPausedNanosCopy) / 1_000_000_000.0);
+                        out.write(String.format(Locale.ROOT, "%.4f,%d,%s,%s%n",
+                            received, event.durationMillis,
+                            event.name.replace(',', ' '), event.cause.replace(',', ' ')));
                     }
                     out.write("\nframe,wall_ms,cpu_render_tick_ms,pacer_gpu_wait_ms,present_gate_ms\n");
                     for (int i = 0; i < count; i++) {

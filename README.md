@@ -118,3 +118,9 @@ Release v0.4.1: uncapped one-command capture with temporary Angelica VSync overr
 The prior v0.4.1 recording had about 24 seconds near 16 FPS followed by 36 seconds near 419 FPS, consistent with background throttling. Three Java GC collections totaled 205 ms around seconds 24–28. Metal had approximately two render passes per frame and no extra copy passes, so no speculative tile-memory attachment change has been enabled.
 
 v0.4.2 release: automatic focus-aware foreground capture to avoid background FPS throttling contaminating benchmark results.
+
+## v0.4.3: precise GC event logging, allocation-free SDL pass instrumentation
+
+`/metalbench` now subscribes to HotSpot GC notifications *only during the active capture* and records the collector name, reported pause duration and an approximate time at which the notification was received. The notification fires after a collection, so it is **not an exact pause start timestamp**, but it helps correlate stalls in the per-frame and per-second sections. JVMs that do not emit the notifications still report the original MXBean GC totals. The Angelica frame probe now reuses its metrics and pass-break buffers rather than allocating two arrays each rendered frame; this affects diagnostic overhead only and does not modify Angelica's Metal rendering logic or attachments.
+
+The previous benchmark recorded **465.355 rendered FPS**, frame P95 **3.978 ms** and P99 **5.598 ms**, with **three GC collections totaling 177 ms**. The two largest pauses (117.9/124.5 ms) aligned with GC activity around seconds 20–22. Another 71.0-ms frame gap near second 47 occurred without a new recorded GC. Render-pass counts remained close to two per frame, with no copy passes or mid-frame submits. Thus a speculative tile-memory rewrite would be unjustified.

@@ -25,6 +25,9 @@ public final class AngelicaFrameProbe {
     private Field acquireWait;
     private Class<?> owner;
     private boolean failed;
+    // Reused on the render thread: no short-lived arrays every rendered frame.
+    private final int[] counterScratch = new int[METRICS.length];
+    private final int[] causeScratch = new int[8];
 
     private AngelicaFrameProbe() {}
 
@@ -57,13 +60,14 @@ public final class AngelicaFrameProbe {
         try {
             if (owner != manager.getClass()) initialize(manager);
             Object frame = frameMethod.invoke(manager);
-            int[] counters = new int[fields.length];
-            for (int i = 0; i < fields.length; i++) counters[i] = fields[i].getInt(frame);
-            int[] causeCounts = ((int[]) passEnds.get(frame)).clone();
+            for (int i = 0; i < fields.length; i++) counterScratch[i] = fields[i].getInt(frame);
+            int[] causeCounts = (int[]) passEnds.get(frame);
+            java.util.Arrays.fill(causeScratch, 0);
+            System.arraycopy(causeCounts, 0, causeScratch, 0, Math.min(causeCounts.length, causeScratch.length));
             bench.recordPassStats(
                 passGeneration.getLong(frame),
-                counters,
-                causeCounts,
+                counterScratch,
+                causeScratch,
                 gpuWait.getLong(frame),
                 acquireWait.getLong(frame));
         } catch (ReflectiveOperationException | ClassCastException | LinkageError e) {
