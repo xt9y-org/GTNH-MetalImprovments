@@ -1,11 +1,12 @@
 package com.xt9y.metal.mixin.mixins;
 
-import com.xt9y.metal.AngelicaFrameProbe;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import com.xt9y.metal.AngelicaFrameProbe;
 
 /** Pure instrumentation: does not change the render pass or attachment state. */
 @Pseudo

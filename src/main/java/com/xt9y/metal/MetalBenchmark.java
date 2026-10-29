@@ -84,8 +84,12 @@ public final class MetalBenchmark {
             long remaining = Math.max(0, (WARMUP_NANOS - (System.nanoTime() - startedNanos)) / 1_000_000_000L);
             return "Warming up (" + remaining + "s remaining)";
         }
-        return "Capturing " + samples + " frames (" + Math.min(seconds, (System.nanoTime() - measuringSince) / 1_000_000_000L)
-            + "/" + seconds + "s)";
+        return "Capturing " + samples
+            + " frames ("
+            + Math.min(seconds, (System.nanoTime() - measuringSince) / 1_000_000_000L)
+            + "/"
+            + seconds
+            + "s)";
     }
 
     public String start(int captureSeconds, String renderer) {
@@ -115,15 +119,19 @@ public final class MetalBenchmark {
         startYaw = mc.thePlayer.rotationYaw;
         startPitch = mc.thePlayer.rotationPitch;
         worldInfo = "dimension=" + mc.thePlayer.dimension
-            + " position=" + String.format(Locale.ROOT, "%.2f,%.2f,%.2f", startX, startY, startZ);
+            + " position="
+            + String.format(Locale.ROOT, "%.2f,%.2f,%.2f", startX, startY, startZ);
         gameSettings = "renderDistanceChunks=" + mc.gameSettings.renderDistanceChunks
-            + " maxFramerate=" + mc.gameSettings.limitFramerate
-            + " vsync=" + mc.gameSettings.enableVsync;
+            + " maxFramerate="
+            + mc.gameSettings.limitFramerate
+            + " vsync="
+            + mc.gameSettings.enableVsync;
         if (mc.gameSettings.enableVsync) warning = "VSync was enabled; ";
         if (mc.gameSettings.limitFramerate > 0 && mc.gameSettings.limitFramerate < 260)
             warning += "FPS limit configured; ";
         return "Automatic benchmark started: 5s warmup + " + captureSeconds
-            + "s capture. Stand still. Current backend: " + renderer;
+            + "s capture. Stand still. Current backend: "
+            + renderer;
     }
 
     private static long[] memory() {
@@ -163,13 +171,10 @@ public final class MetalBenchmark {
 
     public void recordPassStats(long generation, int[] metrics, int[] causes, long gpuWait, long acquireWait) {
         if (state != 2) return;
-        if (lastPassGeneration >= 0 && generation >= lastPassGeneration)
-            totalPasses += generation - lastPassGeneration;
+        if (lastPassGeneration >= 0 && generation >= lastPassGeneration) totalPasses += generation - lastPassGeneration;
         lastPassGeneration = generation;
-        for (int i = 0; i < Math.min(metrics.length, passTotals.length); i++)
-            passTotals[i] += metrics[i];
-        for (int i = 0; i < Math.min(causes.length, passEndCauses.length); i++)
-            passEndCauses[i] += causes[i];
+        for (int i = 0; i < Math.min(metrics.length, passTotals.length); i++) passTotals[i] += metrics[i];
+        for (int i = 0; i < Math.min(causes.length, passEndCauses.length); i++) passEndCauses[i] += causes[i];
         passGpuWait += Math.max(0L, gpuWait);
         passAcquireWait += Math.max(0L, acquireWait);
         samplePassFrames++;
@@ -195,8 +200,7 @@ public final class MetalBenchmark {
             return;
         }
 
-        if (wallNanos > 0L && wallNanos < 1_000_000_000L
-            && cpuNanos > 0L && cpuNanos < 1_000_000_000L) {
+        if (wallNanos > 0L && wallNanos < 1_000_000_000L && cpuNanos > 0L && cpuNanos < 1_000_000_000L) {
             if (samples < MAX_FRAMES) {
                 frameIntervals[samples] = wallNanos;
                 cpuTicks[samples] = cpuNanos;
@@ -212,15 +216,13 @@ public final class MetalBenchmark {
             double dx = mc.thePlayer.posX - startX;
             double dy = mc.thePlayer.posY - startY;
             double dz = mc.thePlayer.posZ - startZ;
-            if (dx * dx + dy * dy + dz * dz > 1.0D
-                || Math.abs(mc.thePlayer.rotationYaw - startYaw) > 3.0F
+            if (dx * dx + dy * dy + dz * dz > 1.0D || Math.abs(mc.thePlayer.rotationYaw - startYaw) > 3.0F
                 || Math.abs(mc.thePlayer.rotationPitch - startPitch) > 3.0F) {
                 if (!warning.contains("Camera moved")) warning += "Camera moved; ";
             }
         }
 
-        if (now - measuringSince >= durationNanos || samples >= MAX_FRAMES)
-            sendChat(finish(false));
+        if (now - measuringSince >= durationNanos || samples >= MAX_FRAMES) sendChat(finish(false));
     }
 
     public String stop() {
@@ -256,15 +258,16 @@ public final class MetalBenchmark {
         final String worldCopy = worldInfo;
         final String settingsCopy = gameSettings;
         final String warningCopy = warning + (interrupted ? "Capture interrupted; " : "");
-        final long heapStart = initialHeap, directStart = initialDirect, heapPeak = peakHeap,
-            directPeak = peakDirect, heapEnd = lastHeap, directEnd = lastDirect;
+        final long heapStart = initialHeap, directStart = initialDirect, heapPeak = peakHeap, directPeak = peakDirect,
+            heapEnd = lastHeap, directEnd = lastDirect;
         final long gcTime = Math.max(0L, lastGcMillis - initialGcMillis);
         final long gcCount = Math.max(0L, lastGcCount - initialGcCount);
         final long passCount = totalPasses, passFrames = samplePassFrames;
         final long gpuWaitCopy = passGpuWait, acquireWaitCopy = passAcquireWait;
         final double elapsed = (System.nanoTime() - measuringSince) / 1_000_000_000.0;
         final String timestamp = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(new Date());
-        final File output = new File(new File(Minecraft.getMinecraft().mcDataDir, "logs"),
+        final File output = new File(
+            new File(Minecraft.getMinecraft().mcDataDir, "logs"),
             "xt9ymetal-bench-" + timestamp + ".csv");
 
         Thread writer = new Thread(() -> {
@@ -283,20 +286,21 @@ public final class MetalBenchmark {
                     out.write("warnings," + warningCopy.replace(',', ';') + "\n");
                     out.write(String.format(Locale.ROOT, "duration_seconds,%.3f%n", elapsed));
                     out.write("frames," + count + "\n");
-                    out.write(String.format(Locale.ROOT, "fps_estimate,%.3f%n",
-                        count * 1_000_000_000.0 / Math.max(1L, sum(wall))));
-                    out.write(String.format(Locale.ROOT, "wall_average_ms,%.4f%n",
-                        sum(wall) / (count * 1_000_000.0)));
-                    out.write(String.format(Locale.ROOT, "wall_p95_ms,%.4f%n",
-                        percentile(sortedWall, 0.95) / 1_000_000.0));
-                    out.write(String.format(Locale.ROOT, "wall_p99_ms,%.4f%n",
-                        percentile(sortedWall, 0.99) / 1_000_000.0));
-                    out.write(String.format(Locale.ROOT, "cpu_average_ms,%.4f%n",
-                        sum(cpu) / (count * 1_000_000.0)));
-                    out.write(String.format(Locale.ROOT, "cpu_p95_ms,%.4f%n",
-                        percentile(sortedCpu, 0.95) / 1_000_000.0));
-                    out.write(String.format(Locale.ROOT, "cpu_p99_ms,%.4f%n",
-                        percentile(sortedCpu, 0.99) / 1_000_000.0));
+                    out.write(
+                        String.format(
+                            Locale.ROOT,
+                            "fps_estimate,%.3f%n",
+                            count * 1_000_000_000.0 / Math.max(1L, sum(wall))));
+                    out.write(String.format(Locale.ROOT, "wall_average_ms,%.4f%n", sum(wall) / (count * 1_000_000.0)));
+                    out.write(
+                        String.format(Locale.ROOT, "wall_p95_ms,%.4f%n", percentile(sortedWall, 0.95) / 1_000_000.0));
+                    out.write(
+                        String.format(Locale.ROOT, "wall_p99_ms,%.4f%n", percentile(sortedWall, 0.99) / 1_000_000.0));
+                    out.write(String.format(Locale.ROOT, "cpu_average_ms,%.4f%n", sum(cpu) / (count * 1_000_000.0)));
+                    out.write(
+                        String.format(Locale.ROOT, "cpu_p95_ms,%.4f%n", percentile(sortedCpu, 0.95) / 1_000_000.0));
+                    out.write(
+                        String.format(Locale.ROOT, "cpu_p99_ms,%.4f%n", percentile(sortedCpu, 0.99) / 1_000_000.0));
                     out.write("gc_collections," + gcCount + "\n");
                     out.write("gc_collection_millis," + gcTime + "\n");
                     out.write("heap_start_mib," + (heapStart / 1048576L) + "\n");
@@ -307,26 +311,39 @@ public final class MetalBenchmark {
                     out.write("direct_peak_mib," + (directPeak / 1048576L) + "\n");
                     out.write("angelica_pass_metric_frames," + passFrames + "\n");
                     out.write("angelica_render_passes," + passCount + "\n");
-                    out.write(String.format(Locale.ROOT, "angelica_render_passes_per_frame,%.3f%n",
-                        passCount / (double) Math.max(1, passFrames)));
-                    out.write(String.format(Locale.ROOT, "angelica_pass_gpu_wait_avg_ms,%.4f%n",
-                        gpuWaitCopy / (Math.max(1L, passFrames) * 1_000_000.0)));
-                    out.write(String.format(Locale.ROOT, "angelica_pass_acquire_wait_avg_ms,%.4f%n",
-                        acquireWaitCopy / (Math.max(1L, passFrames) * 1_000_000.0)));
+                    out.write(
+                        String.format(
+                            Locale.ROOT,
+                            "angelica_render_passes_per_frame,%.3f%n",
+                            passCount / (double) Math.max(1, passFrames)));
+                    out.write(
+                        String.format(
+                            Locale.ROOT,
+                            "angelica_pass_gpu_wait_avg_ms,%.4f%n",
+                            gpuWaitCopy / (Math.max(1L, passFrames) * 1_000_000.0)));
+                    out.write(
+                        String.format(
+                            Locale.ROOT,
+                            "angelica_pass_acquire_wait_avg_ms,%.4f%n",
+                            acquireWaitCopy / (Math.max(1L, passFrames) * 1_000_000.0)));
                     String[] metricNames = AngelicaFrameProbe.metricNames();
                     for (int i = 0; i < passCopy.length; i++)
                         out.write("angelica_" + metricNames[i] + "," + passCopy[i] + "\n");
-                    String[] causes = {
-                        "clear", "compute", "copy", "target", "uniform_block",
-                        "frame_end", "logic_op", "readback"
-                    };
+                    String[] causes = { "clear", "compute", "copy", "target", "uniform_block", "frame_end", "logic_op",
+                        "readback" };
                     for (int i = 0; i < Math.min(causes.length, reasonCopy.length); i++)
                         out.write("angelica_pass_end_" + causes[i] + "," + reasonCopy[i] + "\n");
                     out.write("\nframe,wall_ms,cpu_render_tick_ms,pacer_gpu_wait_ms,present_gate_ms\n");
                     for (int i = 0; i < count; i++) {
-                        out.write(String.format(Locale.ROOT, "%d,%.4f,%.4f,%.4f,%.4f%n",
-                            i + 1, wall[i] / 1_000_000.0, cpu[i] / 1_000_000.0,
-                            waits[i] / 1_000_000.0, gates[i] / 1_000_000.0));
+                        out.write(
+                            String.format(
+                                Locale.ROOT,
+                                "%d,%.4f,%.4f,%.4f,%.4f%n",
+                                i + 1,
+                                wall[i] / 1_000_000.0,
+                                cpu[i] / 1_000_000.0,
+                                waits[i] / 1_000_000.0,
+                                gates[i] / 1_000_000.0));
                     }
                 }
                 MetalImprovements.LOG.info("Completed GTNH Metal benchmark: {}", output.getAbsolutePath());
@@ -337,13 +354,15 @@ public final class MetalBenchmark {
         writer.setDaemon(false);
         writer.start();
 
-        return "Recorded " + count + " frames (" + String.format(Locale.ROOT, "%.0f", elapsed)
-            + "s). Report: logs/" + output.getName();
+        return "Recorded " + count
+            + " frames ("
+            + String.format(Locale.ROOT, "%.0f", elapsed)
+            + "s). Report: logs/"
+            + output.getName();
     }
 
     private static void sendChat(String message) {
         Minecraft mc = Minecraft.getMinecraft();
-        if (mc.thePlayer != null)
-            mc.thePlayer.addChatMessage(new ChatComponentText("[GTNH Metal] " + message));
+        if (mc.thePlayer != null) mc.thePlayer.addChatMessage(new ChatComponentText("[GTNH Metal] " + message));
     }
 }

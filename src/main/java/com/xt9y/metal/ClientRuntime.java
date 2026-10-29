@@ -88,8 +88,8 @@ public final class ClientRuntime {
         cpuTicks.record(renderNanos);
         if (MetalBenchmark.INSTANCE.active()) {
             initPacer();
-            MetalBenchmark.INSTANCE.record(now, wallNanos, renderNanos,
-                pacerValue(gpuWaitMethod), pacerValue(gateMethod));
+            MetalBenchmark.INSTANCE
+                .record(now, wallNanos, renderNanos, pacerValue(gpuWaitMethod), pacerValue(gateMethod));
         }
 
         if (++reportCounter >= 120) {
