@@ -104,3 +104,7 @@ For tile-based Apple GPUs, the diagnostic pass-end breakdown can identify excess
 
 
 v0.4.0 release: one-command /metalbench (five-second warmup, 60-second capture, CSV with CPU and frame timings, memory, GC and Angelica SDL GPU pass/clear/copy/submit counters).
+
+## v0.4.1 benchmark improvements
+
+`/metalbench` temporarily overrides Angelica's FPS cap and disables the effective VSync mode when possible; the original VSync mode is restored after the benchmark, including `/metalbench stop`. It does not write Minecraft video options or change Angelica's backend. The CSV also includes time-series samples of heap, direct buffers, GC count and GC duration (once per second) to help associate stalls with Java memory pressure. If a driver caps the frame rate independently, the report still reflects the observed FPS. The existing Metal backend cannot switch to OpenGL without restarting the game.

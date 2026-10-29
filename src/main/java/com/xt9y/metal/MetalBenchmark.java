@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -29,6 +30,18 @@ public final class MetalBenchmark {
     private final long[] presentGates = new long[MAX_FRAMES];
     private final long[] passTotals = new long[AngelicaFrameProbe.metricNames().length];
     private final long[] passEndCauses = new long[8];
+
+    private static final int MAX_MEMORY_SAMPLES = 130;
+    private final long[] sampleSecond = new long[MAX_MEMORY_SAMPLES];
+    private final long[] sampleHeap = new long[MAX_MEMORY_SAMPLES];
+    private final long[] sampleDirect = new long[MAX_MEMORY_SAMPLES];
+    private final long[] sampleGcMillis = new long[MAX_MEMORY_SAMPLES];
+    private final long[] sampleGcCount = new long[MAX_MEMORY_SAMPLES];
+    private int memorySamples;
+
+    private Method restoreVSync;
+    private Object previousVSync;
+    private boolean temporaryVSyncChanged;
 
     private long startedNanos;
     private long measuringSince;
@@ -100,6 +113,10 @@ public final class MetalBenchmark {
         Arrays.fill(passTotals, 0L);
         Arrays.fill(passEndCauses, 0L);
         samples = 0;
+        memorySamples = 0;
+        restoreVSync = null;
+        previousVSync = null;
+        temporaryVSyncChanged = false;
         totalPasses = 0L;
         samplePassFrames = 0L;
         passGpuWait = 0L;
@@ -126,12 +143,11 @@ public final class MetalBenchmark {
             + mc.gameSettings.limitFramerate
             + " vsync="
             + mc.gameSettings.enableVsync;
-        if (mc.gameSettings.enableVsync) warning = "VSync was enabled; ";
         if (mc.gameSettings.limitFramerate > 0 && mc.gameSettings.limitFramerate < 260)
-            warning += "FPS limit configured; ";
-        return "Automatic benchmark started: 5s warmup + " + captureSeconds
-            + "s capture. Stand still. Current backend: "
-            + renderer;
+            warning += "Configured FPS cap bypassed temporarily; ";
+        disableVSyncTemporarily();
+        return "Uncapped benchmark started: 5s warmup + " + captureSeconds
+            + "s capture. Original VSync settings will be restored. Backend: " + renderer;
     }
 
     private static long[] memory() {
@@ -167,6 +183,14 @@ public final class MetalBenchmark {
         peakHeap = Math.max(peakHeap, lastHeap);
         peakDirect = Math.max(peakDirect, lastDirect);
         lastMemorySample = now;
+        if (!baseline && state == 2 && memorySamples < MAX_MEMORY_SAMPLES) {
+            int i = memorySamples++;
+            sampleSecond[i] = Math.max(0L, (now - measuringSince) / 1_000_000_000L);
+            sampleHeap[i] = lastHeap;
+            sampleDirect[i] = lastDirect;
+            sampleGcMillis[i] = Math.max(0L, lastGcMillis - initialGcMillis);
+            sampleGcCount[i] = Math.max(0L, lastGcCount - initialGcCount);
+        }
     }
 
     public void recordPassStats(long generation, int[] metrics, int[] causes, long gpuWait, long acquireWait) {
@@ -230,6 +254,46 @@ public final class MetalBenchmark {
         return finish(true);
     }
 
+    /**
+     * Override only the running present mode, not the persisted video settings.
+     * The benchmark cap mixin bypasses the ordinary FPS limit independently.
+     */
+    private void disableVSyncTemporarily() {
+        try {
+            Class<?> manager = Class.forName("com.gtnewhorizons.angelica.glsm.GLStateManager");
+            Class<?> modeType = Class.forName("com.gtnewhorizons.angelica.glsm.backend.VSyncMode");
+            Method getMode = manager.getMethod("getEffectiveVSyncMode");
+            previousVSync = getMode.invoke(null);
+            if (previousVSync == null) {
+                warning += "VSync mode unavailable; ";
+                return;
+            }
+            if (!"OFF".equals(String.valueOf(previousVSync))) {
+                @SuppressWarnings({ "rawtypes", "unchecked" })
+                Object off = Enum.valueOf((Class) modeType.asSubclass(Enum.class), "OFF");
+                restoreVSync = manager.getMethod("setVSyncMode", modeType);
+                restoreVSync.invoke(null, off);
+                temporaryVSyncChanged = true;
+            }
+        } catch (ReflectiveOperationException | LinkageError e) {
+            warning += "Could not temporarily disable VSync; ";
+            MetalImprovements.LOG.warn("Failed to disable VSync for benchmark", e);
+        }
+    }
+
+    private void restoreVSyncMode() {
+        if (!temporaryVSyncChanged || restoreVSync == null || previousVSync == null) return;
+        try {
+            restoreVSync.invoke(null, previousVSync);
+        } catch (ReflectiveOperationException | LinkageError e) {
+            MetalImprovements.LOG.warn("Could not restore original VSync mode", e);
+        } finally {
+            temporaryVSyncChanged = false;
+            previousVSync = null;
+            restoreVSync = null;
+        }
+    }
+
     private static long percentile(long[] sorted, double percent) {
         if (sorted.length == 0) return 0L;
         return sorted[Math.max(0, (int) Math.ceil(sorted.length * percent) - 1)];
@@ -244,6 +308,7 @@ public final class MetalBenchmark {
     private String finish(boolean interrupted) {
         if (state == 0) return "No benchmark running";
         state = 0;
+        restoreVSyncMode();
         if (samples == 0) return "Capture ended without any frames.";
 
         sampleMemory(System.nanoTime(), false);
@@ -254,6 +319,12 @@ public final class MetalBenchmark {
         final long[] gates = Arrays.copyOf(presentGates, count);
         final long[] passCopy = passTotals.clone();
         final long[] reasonCopy = passEndCauses.clone();
+        final int memorySampleCount = memorySamples;
+        final long[] secondsCopy = Arrays.copyOf(sampleSecond, memorySampleCount);
+        final long[] heapsCopy = Arrays.copyOf(sampleHeap, memorySampleCount);
+        final long[] directsCopy = Arrays.copyOf(sampleDirect, memorySampleCount);
+        final long[] gcTimeCopy = Arrays.copyOf(sampleGcMillis, memorySampleCount);
+        final long[] gcCountCopy = Arrays.copyOf(sampleGcCount, memorySampleCount);
         final String backendCopy = backend;
         final String worldCopy = worldInfo;
         final String settingsCopy = gameSettings;
@@ -283,6 +354,8 @@ public final class MetalBenchmark {
                     out.write("backend," + backendCopy.replace(',', ' ') + "\n");
                     out.write("scene," + worldCopy.replace(',', ';') + "\n");
                     out.write("settings," + settingsCopy + "\n");
+                    out.write("benchmark_cap_mode,temporarily_uncapped\n");
+                    out.write("benchmark_vsync_mode,temporarily_disabled_when_supported\n");
                     out.write("warnings," + warningCopy.replace(',', ';') + "\n");
                     out.write(String.format(Locale.ROOT, "duration_seconds,%.3f%n", elapsed));
                     out.write("frames," + count + "\n");
@@ -333,6 +406,12 @@ public final class MetalBenchmark {
                         "readback" };
                     for (int i = 0; i < Math.min(causes.length, reasonCopy.length); i++)
                         out.write("angelica_pass_end_" + causes[i] + "," + reasonCopy[i] + "\n");
+                    out.write("\nsecond,heap_mib,direct_mib,gc_count_delta,gc_millis_delta\n");
+                    for (int i = 0; i < memorySampleCount; i++) {
+                        out.write(String.format(Locale.ROOT, "%d,%d,%d,%d,%d%n",
+                            secondsCopy[i], heapsCopy[i] / 1048576L,
+                            directsCopy[i] / 1048576L, gcCountCopy[i], gcTimeCopy[i]));
+                    }
                     out.write("\nframe,wall_ms,cpu_render_tick_ms,pacer_gpu_wait_ms,present_gate_ms\n");
                     for (int i = 0; i < count; i++) {
                         out.write(
