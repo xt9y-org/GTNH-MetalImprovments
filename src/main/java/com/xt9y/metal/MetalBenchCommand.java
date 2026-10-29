@@ -4,6 +4,7 @@ import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.util.ChatComponentText;
 
+/** /metalbench runs a complete default capture without configuration changes. */
 public final class MetalBenchCommand extends CommandBase {
 
     @Override
@@ -13,7 +14,7 @@ public final class MetalBenchCommand extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/metalbench <start [10-120 seconds]|stop|status>";
+        return "/metalbench [start [10-120 seconds]|stop|status]";
     }
 
     @Override
@@ -29,9 +30,7 @@ public final class MetalBenchCommand extends CommandBase {
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
         String result;
-        if (args.length == 0) {
-            result = getCommandUsage(sender);
-        } else if ("start".equalsIgnoreCase(args[0])) {
+        if (args.length == 0 || "start".equalsIgnoreCase(args[0])) {
             int seconds = 60;
             if (args.length >= 2) {
                 try {

@@ -86,11 +86,24 @@ public final class ClientRuntime {
         frameStart = 0L;
         if (renderNanos <= 0L || renderNanos > 1_000_000_000L) return;
         cpuTicks.record(renderNanos);
-        if (MetalBenchmark.INSTANCE.active()) MetalBenchmark.INSTANCE.record(now, wallNanos, renderNanos);
+        if (MetalBenchmark.INSTANCE.active()) {
+            initPacer();
+            MetalBenchmark.INSTANCE.record(now, wallNanos, renderNanos,
+                pacerValue(gpuWaitMethod), pacerValue(gateMethod));
+        }
 
         if (++reportCounter >= 120) {
             reportCounter = 0;
             updateSummaries();
+        }
+    }
+
+    private static long pacerValue(Method method) {
+        if (method == null) return 0L;
+        try {
+            return ((Number) method.invoke(null)).longValue();
+        } catch (ReflectiveOperationException | LinkageError e) {
+            return 0L;
         }
     }
 
@@ -138,18 +151,7 @@ public final class ClientRuntime {
             + " ms since start, particles rejected "
             + rejectedParticles;
 
-        if (!pacerChecked) {
-            pacerChecked = true;
-            if (Loader.isModLoaded("angelica")) {
-                try {
-                    Class<?> pacer = Class.forName("com.gtnewhorizons.angelica.rendering.FramePacer");
-                    gpuWaitMethod = pacer.getMethod("gpuWaitNanos");
-                    gateMethod = pacer.getMethod("gateDurationNanos");
-                } catch (ReflectiveOperationException | LinkageError e) {
-                    gpuWaitMethod = null;
-                }
-            }
-        }
+        initPacer();
         if (gpuWaitMethod != null && gateMethod != null) {
             try {
                 long gpuWait = ((Number) gpuWaitMethod.invoke(null)).longValue();
@@ -162,6 +164,20 @@ public final class ClientRuntime {
             } catch (ReflectiveOperationException e) {
                 pacerSummary = "";
             }
+        }
+    }
+
+    private void initPacer() {
+        if (pacerChecked) return;
+        pacerChecked = true;
+        if (!Loader.isModLoaded("angelica")) return;
+        try {
+            Class<?> pacer = Class.forName("com.gtnewhorizons.angelica.rendering.FramePacer");
+            gpuWaitMethod = pacer.getMethod("gpuWaitNanos");
+            gateMethod = pacer.getMethod("gateDurationNanos");
+        } catch (ReflectiveOperationException | LinkageError e) {
+            gpuWaitMethod = null;
+            gateMethod = null;
         }
     }
 

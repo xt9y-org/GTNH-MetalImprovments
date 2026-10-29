@@ -92,3 +92,12 @@ This release adds low-overhead rolling frame interval and CPU render tick averag
 
 
 v0.3.0: reproducible benchmark command, rolling CPU/wall-frame P95/P99, memory diagnostics and opt-in Angelica Metal startup tuning. No changes to Metal render-pass storage or attachment lifetimes.
+
+
+## One-command profiling (v0.4.0)
+
+Open a world and enter **`/metalbench`**. No restart, JVM arguments, FPS cap change, or configuration edit is required. The command warms the scene for 5 seconds, then collects 60 seconds of wall-frame intervals, CPU render ticks, Angelica's CPU wait/presentation values, heap/direct buffer and GC changes. On SDL GPU backends, an optional read-only mixin samples render-pass counts and break reasons **before Angelica resets those counters**, and transfer/clear/submit events. It saves one `logs/xt9ymetal-bench-YYYYMMDD-HHmmss.csv`. Use `/metalbench status` or `/metalbench stop` as needed, and `/metalbench start 90` for a longer capture.
+
+The command **does not switch the renderer**. Angelica selects OpenGL or Metal during initialization, and changing it safely requires restarting Minecraft. One capture profiles whichever backend is currently running. The report notes VSync/framerate-cap conditions and camera movement. The capture is observational: no graphics state or attachment load/store operations are changed. Render-pass instrumentation only runs when recording on Angelica's SDL GPU backend, and is gracefully skipped when not available. CPU wait samples are **not** GPU execution times.
+
+For tile-based Apple GPUs, the diagnostic pass-end breakdown can identify excess render-target switching, unnecessary clears, copy transitions, upload-flushes, and readbacks. Only after observing those counters can a targeted change in Angelica safely eliminate redundant pass boundaries and memory traffic. No speculative memoryless attachment changes are enabled.
