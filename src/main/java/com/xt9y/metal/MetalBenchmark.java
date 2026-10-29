@@ -470,11 +470,16 @@ public final class MetalBenchmark {
                     }
                     out.write("\nGC_notification_received_second,gc_duration_ms,gc_name,gc_cause\n");
                     for (GcEventSampler.Event event : gcNotificationsCopy) {
-                        double received = Math.max(0.0,
-                            (event.receivedNanos - startNanosCopy - focusPausedNanosCopy) / 1_000_000_000.0);
-                        out.write(String.format(Locale.ROOT, "%.4f,%d,%s,%s%n",
-                            received, event.durationMillis,
-                            event.name.replace(',', ' '), event.cause.replace(',', ' ')));
+                        double received = Math
+                            .max(0.0, (event.receivedNanos - startNanosCopy - focusPausedNanosCopy) / 1_000_000_000.0);
+                        out.write(
+                            String.format(
+                                Locale.ROOT,
+                                "%.4f,%d,%s,%s%n",
+                                received,
+                                event.durationMillis,
+                                event.name.replace(',', ' '),
+                                event.cause.replace(',', ' ')));
                     }
                     out.write("\nframe,wall_ms,cpu_render_tick_ms,pacer_gpu_wait_ms,present_gate_ms\n");
                     for (int i = 0; i < count; i++) {

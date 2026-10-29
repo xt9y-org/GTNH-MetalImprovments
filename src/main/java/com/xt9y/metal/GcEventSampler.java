@@ -22,6 +22,7 @@ import com.sun.management.GarbageCollectionNotificationInfo;
 public final class GcEventSampler {
 
     public static final class Event {
+
         public final long receivedNanos;
         public final long durationMillis;
         public final String name;
@@ -62,15 +63,22 @@ public final class GcEventSampler {
     }
 
     private void onNotification(Notification notification, Object ignored) {
-        if (!collecting || !GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION.equals(notification.getType()))
+        if (!collecting
+            || !GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION.equals(notification.getType()))
             return;
         if (!(notification.getUserData() instanceof CompositeData)) return;
         try {
             GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo
                 .from((CompositeData) notification.getUserData());
             if (info == null || info.getGcInfo() == null) return;
-            Event event = new Event(System.nanoTime(), Math.max(0L, info.getGcInfo().getDuration()),
-                info.getGcName(), info.getGcCause());
+            Event event = new Event(
+                System.nanoTime(),
+                Math.max(
+                    0L,
+                    info.getGcInfo()
+                        .getDuration()),
+                info.getGcName(),
+                info.getGcCause());
             synchronized (events) {
                 if (collecting && events.size() < MAX_EVENTS) events.add(event);
             }
