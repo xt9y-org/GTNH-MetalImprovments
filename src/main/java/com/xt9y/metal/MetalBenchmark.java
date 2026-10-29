@@ -147,7 +147,8 @@ public final class MetalBenchmark {
             warning += "Configured FPS cap bypassed temporarily; ";
         disableVSyncTemporarily();
         return "Uncapped benchmark started: 5s warmup + " + captureSeconds
-            + "s capture. Original VSync settings will be restored. Backend: " + renderer;
+            + "s capture. Original VSync settings will be restored. Backend: "
+            + renderer;
     }
 
     private static long[] memory() {
@@ -408,9 +409,15 @@ public final class MetalBenchmark {
                         out.write("angelica_pass_end_" + causes[i] + "," + reasonCopy[i] + "\n");
                     out.write("\nsecond,heap_mib,direct_mib,gc_count_delta,gc_millis_delta\n");
                     for (int i = 0; i < memorySampleCount; i++) {
-                        out.write(String.format(Locale.ROOT, "%d,%d,%d,%d,%d%n",
-                            secondsCopy[i], heapsCopy[i] / 1048576L,
-                            directsCopy[i] / 1048576L, gcCountCopy[i], gcTimeCopy[i]));
+                        out.write(
+                            String.format(
+                                Locale.ROOT,
+                                "%d,%d,%d,%d,%d%n",
+                                secondsCopy[i],
+                                heapsCopy[i] / 1048576L,
+                                directsCopy[i] / 1048576L,
+                                gcCountCopy[i],
+                                gcTimeCopy[i]));
                     }
                     out.write("\nframe,wall_ms,cpu_render_tick_ms,pacer_gpu_wait_ms,present_gate_ms\n");
                     for (int i = 0; i < count; i++) {
